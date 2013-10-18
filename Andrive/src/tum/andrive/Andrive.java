@@ -27,6 +27,7 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
 				case LoaderCallbackInterface.SUCCESS:
 				{
 					Log.i(TAG, "OpenCV loaded successfully");
+					System.loadLibrary("AndriveNative");
 					mOpenCvCameraView.enableView();
 				}break;
 				
