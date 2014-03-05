@@ -12,9 +12,13 @@ import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.objdetect.CascadeClassifier;
+import org.opencv.core.Core;
 import org.opencv.core.CvType;
+import org.opencv.core.Rect;
 import org.opencv.core.Mat;
+import org.opencv.core.MatOfRect;
 import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 
 import android.os.Bundle;
 import android.app.Activity;
@@ -31,7 +35,8 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
 	private static final String TAG = "OCVSample::Activity";
     private static final Scalar    FACE_RECT_COLOR     = new Scalar(0, 255, 0, 255);
 
-	private Mat img;
+	private Mat mRgba;
+	private Mat mGray;
     private File mCascadeFile;
 	private CameraBridgeViewBase mOpenCvCameraView;
 
@@ -124,23 +129,33 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
     
     @Override
     public void onCameraViewStarted(int width, int height) {
-    	img = new Mat(height, width, CvType.CV_8UC4);
+    	mRgba = new Mat(height, width, CvType.CV_8UC4);
     };
     
     @Override
     public void onCameraViewStopped() {
-    	img.release();
+    	mRgba.release();
     };
     
     @Override
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
         
-        img = inputFrame.rgba();
+        mRgba = inputFrame.rgba();
+        mGray = inputFrame.gray();
 
+        MatOfRect objs = new MatOfRect();
+        
+        javaClassifier.detectMultiScale(mGray, objs, 1.1, 2, 2, // TODO: objdetect.CV_HAAR_SCALE_IMAGE
+            new Size(0, 0), new Size());
 
-    	// nativeThreshold(inputFrame.rgba().getNativeObjAddr(), img.getNativeObjAddr());
-    	// faceDetect(inputFrame.rgba().getNativeObjAddr(), img.getNativeObjAddr());
-    	return img;
+        Rect[] objArray = objs.toArray();
+        for (int i = 0; i < objArray.length; i++)
+            Core.rectangle(mRgba, objArray[i].tl(), objArray[i].br(), FACE_RECT_COLOR, 3);
+
+        return mRgba;
+
+    	// nativeThreshold(inputFrame.rgba().getNativeObjAddr(), mRgba.getNativeObjAddr());
+    	// faceDetect(inputFrame.rgba().getNativeObjAddr(), mRgba.getNativeObjAddr());
     }
 
     @Override
