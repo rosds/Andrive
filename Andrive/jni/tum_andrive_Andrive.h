@@ -15,6 +15,12 @@ extern "C" {
 JNIEXPORT void JNICALL Java_tum_andrive_Andrive_nativeThreshold
   (JNIEnv *, jobject, jlong, jlong);
 
+JNIEXPORT void JNICALL Java_tum_andrive_Andrive_faceDetect
+  (JNIEnv *, jobject, jlong, jlong);
+
+JNIEXPORT void JNICALL Java_tum_andrive_Andrive_loadClassifierXml
+  (JNIEnv *, jobject, jstring);
+
 #ifdef __cplusplus
 }
 #endif
