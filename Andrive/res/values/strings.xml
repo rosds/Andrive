@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Andrive</string>
-    <string name="action_settings">Settings</string>
+    <string name="action_java_detector">Java Detector</string>
+    <string name="action_native_detector">Native Detector</string>
 </resources>

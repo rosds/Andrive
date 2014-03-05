@@ -21,6 +21,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.SurfaceView;
 import android.view.WindowManager;
 
@@ -52,7 +53,7 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
                         InputStream is = getResources().openRawResource(R.raw.lbpcascade_frontalface);
                         File cascadeDir = getDir("cascade", Context.MODE_PRIVATE);
                         mCascadeFile = new File(cascadeDir, "lbpcascade_frontalface.xml");
-                        FileOutputStream os = new FileOutputStream(mCascadeFile);
+                            FileOutputStream os = new FileOutputStream(mCascadeFile);
 
                         byte[] buffer = new byte[4096];
                         int bytesRead;
@@ -133,9 +134,12 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
     
     @Override
     public Mat onCameraFrame(CvCameraViewFrame inputFrame) {
+        
+        img = inputFrame.rgba();
+
+
     	// nativeThreshold(inputFrame.rgba().getNativeObjAddr(), img.getNativeObjAddr());
     	// faceDetect(inputFrame.rgba().getNativeObjAddr(), img.getNativeObjAddr());
-        img = inputFrame.rgba();
     	return img;
     }
 
@@ -143,6 +147,12 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.andrive, menu);
+        return true;
+    }
+    
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        Log.i(TAG, "called onOptionsItemSelected; selected item: " + item);
         return true;
     }
     
