@@ -41,6 +41,8 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
 	private CameraBridgeViewBase mOpenCvCameraView;
 
     private CascadeClassifier javaClassifier;
+
+    private int relativeObjSize = 0;
 	
 	private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
 		@Override
@@ -55,9 +57,9 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
 
                     try {
                         // load cascade file from application resources
-                        InputStream is = getResources().openRawResource(R.raw.lbpcascade_frontalface);
+                        InputStream is = getResources().openRawResource(R.raw.cascade);
                         File cascadeDir = getDir("cascade", Context.MODE_PRIVATE);
-                        mCascadeFile = new File(cascadeDir, "lbpcascade_frontalface.xml");
+                        mCascadeFile = new File(cascadeDir, "cascade.xml");
                             FileOutputStream os = new FileOutputStream(mCascadeFile);
 
                         byte[] buffer = new byte[4096];
@@ -144,9 +146,13 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
         mGray = inputFrame.gray();
 
         MatOfRect objs = new MatOfRect();
+
+        // Adjust minimun size for objects in the image
+        int height = mGray.rows();
+        relativeObjSize = Math.round(height * 0.2f);
         
         javaClassifier.detectMultiScale(mGray, objs, 1.1, 2, 2, // TODO: objdetect.CV_HAAR_SCALE_IMAGE
-            new Size(0, 0), new Size());
+        new Size(relativeObjSize, relativeObjSize), new Size());
 
         Rect[] objArray = objs.toArray();
         for (int i = 0; i < objArray.length; i++)
