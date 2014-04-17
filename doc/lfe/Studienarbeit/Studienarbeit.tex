@@ -1,0 +1,177 @@
+%Alle zu bearbeitenden Felder sind als solche gekennzeichnet. 
+%Warnungen sind in der Regel nicht komplett vermeidbar und auch in dieser Vorlage vorhanden (Bei mir 7). Sie sind meistens eher als Hinweise zu verstehen.
+%Bei Fragen zu dieser Vorlage einfach eine Mail an gold@lfe.mw.tum.de
+%Viel Erfolg!
+
+
+\documentclass[
+	12pt,
+	headinclude,
+	footinclude,
+	a4paper,
+	listof=totoc,
+	bibliography=totoc,
+	index=totoc,
+	%twoside, %Für beidseitigen Druck
+	]{scrreprt}
+
+
+	
+	
+\newcommand{\myname}[0]{Max Mustermann} %---------- HIER NAME EINTRAGEN ----------
+\newcommand{\mythema}[0]{Titel der Studienarbeit} %---------- HIER TITEL EINTRAGEN ----------
+\newcommand{\mythemaeng}[0]{Titel der Studienarbeit in Englisch} %---------- HIER TITEL IN ENGLISCH EINTRAGEN ----------
+\newcommand{\myarbeit}[0]{Theoretische Diplomarbeit} %---------- HIER ART DER ARBEIT EINTRAGEN ----------
+\newcommand{\mymodul}[0]{Produktionstechnik} %---------- HIER STUDIENGANGMODUL EINTRAGEN ----------
+
+%----- Bitte außerdem die Datei _names.tex anpassen ------
+
+
+\input{_myDefs.tex} %Definition zu Bildern und Dokumentstyle
+
+
+
+% --------------------------------------------------
+% -------------------- DOCUMENT --------------------
+% --------------------------------------------------
+
+
+\begin{document}
+
+
+\thispagestyle{empty} %Keine Seitennummer auf der Titelseite
+
+\input{_title.tex} %Titelseite, wird automatisch erstellt
+
+\renewcommand{\thepage}{\roman{page}} %Römische Zahlen von Hauptteil
+
+\clearpage
+
+\input{_names.tex} %---------- Bitte anpassen! ----------
+
+\clearpage
+
+\input{_law.tex} %Erklärungen, wird automatisch erstellt
+
+
+
+
+% --------------------------------------------------
+% -------------------- ABSTRACT --------------------
+% --------------------------------------------------
+
+
+
+\begin{abstract}
+\thispagestyle{plain} %Fügt eine Seitenzahl ein
+\ofoot[\pagemark]{\pagemark} %Fügt eine Seitenzahl ein
+
+\noindent{\bf Kurzfassung / Abstract}\\
+
+
+Ein Abstract ist eine prägnante Inhaltsangabe, ein Abriss ohne Interpretation und Wertung einer wissenschaftlichen Arbeit. In DIN 1426 wird das (oder auch der) Abstract als Kurzreferat zur Inhaltsangabe beschrieben.
+
+Die Definition des American National Standards Institute (ANSI) lautet: "An abstract is defined as an abbreviated accurate representation of the contents of a document." ("Ein Abstract ist definiert als eine gekürzte präzise Darstellung des Inhalts eines Dokuments.")
+
+
+\end{abstract}
+
+
+
+
+% --------------------------------------------------
+% --------------- INHALTVERZEICHNIS ----------------
+% --------------------------------------------------
+
+
+
+\tableofcontents %Bindet das Inhaltsverzeichnis ein
+
+\thispagestyle{plain} %Fügt eine Seitenzahl ein
+\ofoot[\pagemark]{\pagemark} %Fügt eine Seitenzahl ein
+
+\clearpage
+
+\phantomsection
+
+\clearpage
+
+\setcounter{page}{4} %Seitenzähler resetten
+
+% --------------------------------------------------
+% ------------------- HAUPTTEIL --------------------
+% --------------------------------------------------
+
+
+
+\newpage{\pagestyle{plain}
+\cleardoublepage}
+\renewcommand{\thepage}{\arabic{page}}
+\setcounter{page}{1}
+\pagestyle{scrheadings}
+\renewcommand*{\chapterpagestyle}{scrheadings}
+
+%Es bietet sich an, die einzelnen Kapitel in eigene *.tex Dateien auszulagern, um die Übersichtlichkeit zu verbessern. Sollte das nicht gewünscht sein, können die Inhalte dieser *.tex Dateien hier eingefügt und die "\input xxx.tex"' zeilen entfernt werden.
+%Die Gliederung/Kapitel ist/sind natürlich der Arbeit entsprechend anzupassen
+
+\input{tex/einleitung.tex}
+
+\input{tex/anmerkungen.tex}
+
+\input{tex/sumatra.tex}
+
+\input{tex/zitieren.tex}
+
+
+
+
+% --------------------------------------------------
+% -------------- LITERATURVERZEICHNIS --------------
+% --------------------------------------------------
+	
+	
+\bibliographystyle{apalike} %Zitierstil wie APA6
+\bibliography{Bibtex} %Bibliotheksdatei, hier Bibtex.bib
+
+
+
+% --------------------------------------------------
+% ------------------ VERZEICHNISSE -----------------
+% --------------------------------------------------
+
+
+\listoffigures %Abbildungsverteichnis
+\listoftables %Tabellenverzeichnis
+
+
+
+% --------------------------------------------------
+% --------------------- GOSSAR ---------------------
+% --------------------------------------------------
+
+
+%Sollte ein Glossar erwünscht sein:
+\addcontentsline{toc}{chapter}{Glossar}
+\chapter*{Glossar}
+\input{_glossar.tex} %Bitte bearbeiten
+
+
+
+
+% --------------------------------------------------
+% -------------------- ANHANG ----------------------
+% --------------------------------------------------
+
+
+\begin{appendix} %Anhang
+\refstepcounter{chapter}
+\addchap{Anhang}
+Anhang A 
+
+\end{appendix}
+
+\end{document}
+
+% --------------------------------------------------
+% --------------------------------------------------
+% --------------------------------------------------

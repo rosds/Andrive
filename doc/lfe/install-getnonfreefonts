@@ -1,0 +1,1115 @@
+#! /usr/bin/env texlua
+--*- Lua -*-
+--  -- pretend that this is a binary file.
+-- Web browsers shall download the file, not display it.
+
+-- Copyright (C) 2009 Reinhard Kotucha <kotucha@tug.org>
+--
+-- You may freely use, modify and/or distribute this file.
+
+release='2013-04-16'
+
+----------------------------------------------------------------
+-- The following variables are only used for TeX systems whose
+-- file system layout is not identical to that created by the
+-- TeX Live installer.  This is usually the case for TeX systems
+-- shipped with Linux/Unix distributions (binaries for a single 
+-- platform only, and texmf* in /usr/share).
+--
+-- By default we install in /usr/local in order not to interfere
+-- with the package manager of your Linux/Unix distribution.
+--
+-- These variables have no effect if you have a TeX Live system 
+-- from http://texlive.org .
+
+BINDIR='/usr/local/bin'
+MANDIR='/usr/local/share/man/man1'
+
+----------------------------------------------------------------
+-- You don't have to change anything below this line.
+----------------------------------------------------------------
+
+--> !!BEGIN-INSERTED-FILES!!
+
+-- Date: Thu Nov 28 18:56:27 2013 UTC
+
+script=[[
+#!/usr/bin/env perl
+
+## getnonfreefonts
+## Copyright 2006-2013 Reinhard Kotucha <reinhard.kotucha@web.de>
+#
+# This work may be distributed and/or modified under the
+# conditions of the LaTeX Project Public License, either version 1.3
+# of this license or (at your option) any later version.
+# The latest version of this license is in
+#   http://www.latex-project.org/lppl.txt
+# 
+# The current maintainer is Reinhard Kotucha.
+
+my $TL_version='2013';  
+my $revision='2013-10-18';
+
+use Getopt::Long;
+$Getopt::Long::autoabbrev=0;
+Getopt::Long::Configure ("bundling");
+
+$opt_lsfonts=0;
+$opt_force=0;
+
+sub usage {
+    print <<'EOF';
+Usage:
+    getnonfreefonts[-sys] [-a|--all] [-d|--debug] [-f|--force]
+        [-l|--lsfonts] [-r|--refreshmap] [-v|--verbose] [--version] 
+        [-H|--http] [font1] [font2] ...
+
+    getnonfreefonts installs fonts in $TEXMFHOME.
+    getnonfreefonts-sys installs fonts in $TEXMFLOCAL.
+
+    Options:
+        -a|--all        Install all fonts.
+
+        -d|--debug      Provide additional messages for debugging.
+
+        -f|--force      Install fonts even if they are installed already.
+
+        -h|--help       Print this message.
+
+        -l|--lsfonts    List all fonts available.
+
+        -r|--refreshmap Refresh map file.
+
+        -v|--verbose    Be more verbose.
+
+        -H|--http       Use http instead of ftp (see manual).
+
+        --version       Print version number.
+
+EOF
+;
+}
+
+# GetOptions destroys @ARGV.
+# We have to create a new array because assignments create references.
+
+my @ARGS;
+foreach my $arg (@ARGV) {
+  push (@ARGS, $arg);
+}
+
+$done=GetOptions 
+    "all|a",
+    "debug|d",
+    "force|f",
+    "help|h",
+    "http|H",
+    "lsfonts|l",
+    "refreshmap|r",
+    "verbose|v",
+    "version",
+    "sys";
+
+
+unless ($done) {
+  print "\n"; usage; exit 1;
+}
+
+$^W=1 if $opt_debug;
+
+my $pathsep;
+
+sub win32 {
+  if ($^O=~/^MSWin(32|64)/i) {
+    $pathsep="\\";
+    return 1;
+  } else {
+    $pathsep="/";
+    return 0;
+  }
+}
+
+sub expand_var {
+  my $var=shift;
+
+  if (win32) {
+    open KPSEWHICH, 'kpsewhich --expand-var=$'  . "$var |";
+  } else {
+    open KPSEWHICH, 'kpsewhich --expand-var=\$' . "$var |";
+  }
+  while (<KPSEWHICH>) {
+    chop;
+    return "$_";
+  }
+  close KPSEWHICH;
+}
+
+sub var_value {
+  my $var=shift;
+  my $ret;
+
+  $ret=`kpsewhich --var-value=$var`;
+  chomp($ret);
+  return $ret;
+}
+
+
+
+@allpackages=@ARGV;
+
+print "$TL_version\n" and exit 0 if $opt_version; 
+
+if ($opt_help or !@ARGS) {
+  print "\nThis is getnonfreefonts";
+  print '-sys' if ($sys);
+  print ", version $TL_version, revision $revision.\n\n";
+  usage; 
+}
+
+
+sub message {
+  my $message=shift;
+  if ($message=~/^\[/) {
+    print "$message\n";
+  } else {
+    printf "%-60s", $message;
+  }
+}
+
+
+sub debug_msg {
+  my $message=shift;
+  if ($opt_debug) {
+    print STDERR "DEBUG: $message\n";
+  }
+}
+
+
+sub get_tmpdir {
+  if ($opt_debug) {
+    for my $var (qw(TMPDIR TEMP TMP)) {
+      if (defined $ENV{$var}) {
+        debug_msg "Environment variable $var='$ENV{$var}'.";
+      } else {
+        debug_msg "Environment variable $var not set.";
+      }
+    }
+  }
+  # get TMPDIR|TEMP|TMP environment variable
+
+  my $SYSTMP=undef;
+  $SYSTMP||=$ENV{'TMPDIR'};
+  $SYSTMP||=$ENV{'TEMP'};
+  $SYSTMP||=$ENV{'TMP'};
+  $SYSTMP||='/tmp';
+  return "$SYSTMP";
+}
+
+sub which {
+  my $prog=shift;
+  my @PATH;
+  my $PATH=$ENV{'PATH'};
+  if (&win32) {
+    my @PATHEXT=split ';', $ENV{'PATHEXT'};
+    push @PATHEXT, '';  # if argument contains an extension
+    @PATH=split ';', $PATH;
+    for my $dir (@PATH) {
+	    $dir=~s/\\/\//g;
+	    for my $ext (@PATHEXT) {
+        if (-f "$dir/$prog$ext") {
+          return "$dir/$prog$ext";
+        }
+	    }
+    }
+  } else {
+    @PATH=split ':', $PATH;
+    for my $dir (@PATH) {
+	    if (-x "$dir/$prog") {
+        return "$dir/$prog";
+	    }
+    }
+  }
+  return 0;
+}
+
+sub show_path {
+  if ($opt_debug) {
+    my @PATH;
+    if (win32) {
+      @PATH=split ';', $ENV{'PATH'};
+    } else {
+      @PATH=split ':', $ENV{'PATH'};
+    }
+    my $index=0;
+    
+    foreach my $dir (@PATH) {
+      debug_msg "PATH\[$index\]: '$dir'.";
+      ++$index;
+    }
+  }
+}
+
+sub signals {
+  my @signals;
+  my @common_signals=qw(INT ILL FPE SEGV TERM ABRT);
+  my @signals_UNIX=qw(QUIT BUS PIPE);
+  my @signals_Win32=qw(BREAK);
+
+  if (win32) {
+    @signals=(@common_signals, @signals_Win32);
+  } else {
+    @signals=(@common_signals, @signals_UNIX);
+  }
+  debug_msg "Supported signals: @signals.";
+  return @signals;
+}
+
+
+sub getfont_url {
+  my $getfont_url;
+  my $FTP='ftp://tug.org/tex/getnonfreefonts';
+  my $HTTP='http://tug.org/~kotucha/getnonfreefonts';
+  if (1) { # $opt_http
+    debug_msg 'Download method: HTTP.';
+#    debug_msg "Note that not all fonts are accessible via HTTP.";
+    $getfont_url="$HTTP/getfont$TL_version";
+  } else {
+    debug_msg 'Download method: FTP.';
+    debug_msg "Try --html if your firewall blocks FTP.";
+    $getfont_url="$FTP/getfont$TL_version";
+  }
+  debug_msg "Using script '$getfont_url'.";
+  return $getfont_url;
+}
+
+
+sub expand_braces {
+  my $var=shift;
+  my $pathsep;
+  my $retstring;
+  my @retlist;
+  if (win32) {
+    open KPSEWHICH, 'kpsewhich --expand-braces=$'  . "$var |";
+    $pathsep=';';
+  } else {
+    open KPSEWHICH, 'kpsewhich --expand-braces=\$' . "$var |";
+    $pathsep=':';
+  }
+  $retstring=(<KPSEWHICH>);
+  close KPSEWHICH;
+  chop $retstring;
+  @retlist=split $pathsep, $retstring;
+  if ($opt_debug) {
+    my $index=0;
+    foreach my $entry (@retlist) {
+	    debug_msg "$var\[$index\]: '$entry'.";
+	    ++$index;
+    }
+    debug_msg "Extracting the first element of the list ($var\[0\]):";
+    debug_msg "$var\[0\]='$retlist[0]'.";
+  }
+  return "$retlist[0]";
+}
+
+sub check_tmpdir{
+  my $SYSTMP=shift;
+  die "! ERROR: The temporary directory '$SYSTMP' doesn't exist.\n"
+      unless (-d "$SYSTMP");
+
+  die "! ERROR: The temporary directory '$SYSTMP' is not writable.\n"
+      unless (-w "$SYSTMP");
+}
+
+sub check_installroot {
+  my ($INSTALLROOTNAME, $INSTALLROOT)=@_;
+  mkdir "$INSTALLROOT" unless (-d "$INSTALLROOT");
+
+  die "! ERROR: The variable $INSTALLROOTNAME is not set.\n"
+      unless length ("$INSTALLROOT") > 0;
+  
+  die "! ERROR: The install directory '$INSTALLROOT' doesn't " .
+      "exist.\n" .
+      "         If this is the correct path, please create " .
+      "this directory manually.\n" 
+      unless (-d "$INSTALLROOT");
+  
+  die "! ERROR: The install directory '$INSTALLROOT' is not writable.\n"
+      unless (-w "$INSTALLROOT");
+}
+
+sub check_binary {
+  my $binary=shift;
+  if ($opt_debug) {
+    debug_msg "Search for $binary in PATH:";
+    my $binary=which "$binary";
+    debug_msg "Found '$binary'.";
+  }
+}
+
+debug_msg "getnonfreefonts rev. $revision (TL $TL_version).";
+
+debug_msg ("argv[0]: '$0'");
+my $nargs=@ARGS+0;
+for (0..$#ARGS) {
+  my $i=$_;
+  my $arg=$ARGS[$i];
+  $i++;
+  debug_msg ("argv[$i]: '$arg'");
+}
+
+
+my $sys=($0=~/-sys$/)? 1:0;
+if ($sys==1) {
+  debug_msg("sys=true, determined by filename");
+} else {
+  debug_msg("sys=false, determined by filename");
+}
+
+$sys=1 if $opt_sys;
+debug_msg("sys=true, determined by option") if $opt_sys;
+
+##$sys=1 if (defined $ENV{'TEX_SYS_PROG'});
+
+if (win32) {
+# ugly workaround for --sys detection in runscript wrapper.
+  my $TEXMFVAR=var_value('TEXMFVAR');
+  my $TEXMFSYSVAR=var_value('TEXMFSYSVAR');
+  debug_msg("TEXMFVAR=$TEXMFVAR");
+  debug_msg("TEXMFSYSVAR=$TEXMFSYSVAR");
+
+  if ($TEXMFVAR eq $TEXMFSYSVAR) {
+    $sys=1;
+    debug_msg("sys=true, determined by kpathsea vars");
+  }
+}
+
+# Determine the URL.
+my $getfont_url=getfont_url;
+
+my $SYSTMP=get_tmpdir;
+
+debug_msg "Internal variable SYSTMP set to '$SYSTMP'.";
+
+check_binary 'kpsewhich';
+
+# Determine INSTALLROOT.
+
+$INSTALLROOTNAME=($sys)? 'TEXMFLOCAL':'TEXMFHOME';
+
+$INSTALLROOT=expand_braces "$INSTALLROOTNAME";
+
+# Remove trailing exclamation marks and double slashes.
+
+debug_msg "Removing leading \"!!\" and trailing \"//\" " . 
+    "and set INSTALLROOT:";
+
+$INSTALLROOT=~s/^!!//;
+$INSTALLROOT=~s/\/\/$//;
+
+debug_msg "INSTALLROOT='$INSTALLROOT'.";
+
+($sys)? debug_msg "sys=true.":debug_msg "sys=false.";
+
+if ($opt_help or !@ARGS) {
+  print <<"ENDUSAGE";
+  Directories:
+       temporary: '$SYSTMP/getfont-<PID>'
+       install:   '$INSTALLROOT'
+
+ENDUSAGE
+check_tmpdir $SYSTMP;
+check_installroot "$INSTALLROOTNAME", "$INSTALLROOT";
+exit 0;
+}
+
+check_tmpdir $SYSTMP;
+check_installroot "$INSTALLROOTNAME", "$INSTALLROOT";
+
+my $tmpdir="$SYSTMP" . $pathsep . "getfont-$$";
+debug_msg "Internal variable tmpdir set to '$tmpdir'.";
+
+mkdir "$tmpdir" or die "! ERROR: Can't mkdir '$tmpdir'.";
+chdir "$tmpdir" or die "! ERROR: Can't cd '$tmpdir'.";
+
+#install_signal_handlers $SYSTMP, $tmpdir;
+
+sub remove_tmpdir {
+  debug_msg "Executing Signal Handler:";
+  chdir "$SYSTMP" or die "! ERROR: Can't cd '$SYSTMP'.\n";
+  opendir TMPDIR, "$tmpdir" 
+      or print "! ERROR: Can't read directory '$tmpdir'.\n";
+  my @alltmps=readdir TMPDIR;
+  closedir TMPDIR;
+  foreach my $file (@alltmps) {
+    next if $file=~/^\./;
+    unlink "$tmpdir/$file";
+    debug_msg "unlink '$tmpdir/$file'.";
+  }
+  rmdir "$tmpdir" or die 
+      "! ERROR: Can't remove directory '$tmpdir'.\n";
+  debug_msg "rmdir  '$tmpdir'.";
+}
+
+foreach my $signal (signals) {
+  $SIG{"$signal"}=\&remove_tmpdir;
+}
+debug_msg 
+    "Signal handlers installed. Don't expect too much on Windows.";
+
+my $TLROOT=expand_var 'SELFAUTOPARENT';
+my $BINDIR=expand_var 'SELFAUTOLOC';
+
+my $has_wget=0;
+my $WGET;
+
+if (win32) {
+  $has_wget=1; ## shipped with TL.
+    
+  if (-f "$TLROOT\\tlpkg\\installer\\wget\\wget.exe") {
+	# TL-2008+
+    $WGET="$TLROOT\\tlpkg\\installer\\wget\\wget.exe";
+  } elsif (-f "$BINDIR\\wget.exe") {
+	# TL-2005...TL-2007
+    $WGET="$BINDIR\\wget.exe";
+  } else {
+    die "ERROR: No wget binary found.\n";
+  }
+} elsif (which "wget") {
+  $WGET='wget';
+  $has_wget=1; ## wget is in PATH.
+}
+
+show_path;
+
+debug_msg "No wget binary found on your system, trying curl." 
+    unless ($has_wget);
+
+if ($has_wget) {
+  debug_msg "Running '$WGET $getfont_url'.";
+  system ("$WGET", "$getfont_url") == 0 
+      or die "! Error: Can't execute wget.\n";
+} else {
+  debug_msg "Running 'curl -O $getfont_url'.";
+  system ('curl', '-O', "$getfont_url") == 0 
+      or die "! Error: Can't execute curl.\n";
+}
+
+# Download the fonts.
+
+my @getfont=('perl', "./getfont$TL_version", '--getnonfreefonts');
+push @getfont, "--installroot=$INSTALLROOT";
+push @getfont, '--lsfonts' if $opt_lsfonts;
+push @getfont, '--force' if $opt_force;
+push @getfont, '--debug' if $opt_debug;
+push @getfont, '--verbose' if $opt_verbose;
+push @getfont, '--sys' if $sys;
+push @getfont, '--refreshmap' if $opt_refreshmap;
+push @getfont, '--all' if $opt_all;
+push @getfont, '--http' if $opt_http;
+if ($has_wget) {
+  push @getfont, "--wget_bin=$WGET";
+} else {
+  push @getfont, '--use_curl';
+}
+push @getfont, @allpackages;
+
+my $getfont_cmd=join " ", @getfont;
+
+debug_msg "Running '$getfont_cmd'.";
+
+system @getfont;
+
+# Evaluate the exit status.  It will be 2 if something had been
+# installed and in this case we need to run texhash/updmap.
+
+my $exit_code=$?;
+my $exit_status=int($exit_code/256);
+
+if ($sys) {	     
+  debug_msg "Info: Execute updmap-sys if exit status is 2.";
+} else {
+  debug_msg "Info: Execute updmap if exit status is 2.";
+}
+
+debug_msg "Exit status of getfont$TL_version is $exit_status.";
+
+if ($exit_status==2) {
+  print "\n";
+  system 'texhash', "$INSTALLROOT";
+  $updmap_command=($sys)? 'updmap-sys':'updmap';
+  @updmap=("$updmap_command");
+  push @updmap, '--quiet' unless $opt_verbose;
+  print "\n";
+  message "Updating map files ($updmap_command). Be patient...";
+  system @updmap;
+  
+  message $?? '[failed]':'[done]';
+}
+
+remove_tmpdir;
+
+__END__
+
+#  Local Variables:
+#    perl-indent-level: 2
+#    tab-width: 2
+#    indent-tabs-mode: nil
+#  End:
+#  vim:set tabstop=2 expandtab:
+]]
+
+man=[[
+.TH getnonfreefonts 1 "December 2009" "TeX Live" "TeX Live"
+.SH NAME
+getnonfreefonts \- download and install fonts which cannot be
+distributed on a CD
+.LP
+getnonfreefonts-sys \- download and install fonts system\-wide which
+cannot be distributed on a CD
+
+.SH SYNOPSIS
+
+.BI "getnonfreefonts [" options "] [" fontlist ]
+.sp
+.BI "getnonfreefonts-sys [" options "] [" fontlist ]
+
+.SH DESCRIPTION
+Some font suppliers provide fonts which can be used freely but they
+disallow that money is charged for the distribution.  Hence, for
+distributions on CD or DVD it is usually impossible to include
+these fonts.
+
+.B "getnonfreefonts"
+is a script which downloads and installs these fonts.  Actually, it
+first downloads the program
+.BI "getfont"<year>
+from tug.org which is then executed.
+.BI "getfont"<year>
+does the real work.  It will be updated occasionally to support more
+fonts.  
+.I <year>
+denotes the TeXLive release.
+
+.B getnonfreefonts
+and
+.B getnonfreefonts-sys
+are identical except that
+.B getnonfreefonts
+installs files to $TEXMFHOME
+while
+.B getnonfreefonts-sys
+installs files to $TEXMFLOCAL.
+
+.BI "getfont"<year>
+will not be installed permanently on your system.  It only
+exists in a temporary directory while 
+.BI getnonfreefonts
+is running.
+
+Run
+.B getnonfreefonts --lsfonts
+to get a list of supported fonts.
+
+.SH OPTIONS
+
+.TP
+.BR "-a" , " --all"
+.rg
+Install all fonts.
+
+.TP
+.BR "-d" , " --debug"
+.rg
+Provide additional messages for debugging.  These messages are sent to
+STDERR.
+
+.TP
+.BR "-f" , " --force"
+.rg
+Install fonts even if they are installed already.
+
+.TP
+.BR "-h" , " --help"
+.rg
+Print a help message.  Nothing is installed but the directories where
+the fonts will be installed and the temporary directory are shown.
+.BI "<" PID ">" 
+will be replaced by the process ID of the current
+process. 
+
+.TP
+.BR "-H" , " --http"
+.rg
+Use HTTP instead of FTP.  This is useful if you are behind a firewall
+which is blocking FTP.  However, you can't install fonts which are on
+FTP servers.  Currently this is only "Adobe Euro".
+
+.TP
+.BR "-l" , " --lsfonts"
+.rg
+List all available fonts and tell whether they are installed already. 
+
+.TP
+.BR "-r" , " --refreshmap"
+.rg
+Register 
+.B map 
+files for already installed fonts and run 
+.B updmap. 
+This is needed after upgrading TeX Live to a newer release.
+
+.TP
+.B --sys
+.rg
+If you call
+.B getnonfreefonts
+with the
+.B --sys
+option, it behaves exactly as
+.BR "getnonfreefonts-sys".
+
+.TP
+.BR "-v" , " --verbose"
+.rg
+Be more verbose.  This option is only needed for debugging.
+
+.TP
+.BR "--version"
+.rg
+Print version number.
+
+.SH ENVIRONMENT
+One of the environment variables
+.BR "TMP" , " TEMP" ,
+or 
+.B  TMPDIR 
+must exist.  They are used to determine where to put the temporary
+files.  The directory must exist and must be writable.
+.B /tmp
+will be used if none of the variables is defined.
+
+.SH REQUIREMENTS
+Though this program is supposed to be used with 
+.B TeX Live
+it might work with other TeX distributions too.  The programs
+.BR "wget"
+or 
+.BR "curl" ,
+.BR "unzip" , 
+and
+.B kpsewhich
+as well as a recent version of
+.B updmap 
+which supports the 
+.B --enable
+option are required.
+
+.SH BUGS
+Please send bug reports to Reinhard Kotucha <reinhard.kotucha@web.de>.
+]]
+
+sman=[[
+.so man1/getnonfreefonts.1
+]]
+
+manpdf=[[
+JVBERi0xLjUKJdDUxdAKMSAwIG9iago8PC9UeXBlL1BhZ2VzL01lZGlhQm94WzAgMCA1OTUgODQy
+XS9LaWRzWzYgMCBSIDcgMCBSXS9Db3VudCAyPj5lbmRvYmoKMiAwIG9iago8PC9SNyAxMiAwIFI+
+PmVuZG9iagozIDAgb2JqCjw8L1R5cGUvRm9udC9TdWJ0eXBlL1R5cGUxL0Jhc2VGb250L1RpbWVz
+LUJvbGQ+PmVuZG9iago0IDAgb2JqCjw8L1R5cGUvRm9udC9TdWJ0eXBlL1R5cGUxL0Jhc2VGb250
+L1RpbWVzLVJvbWFuL0VuY29kaW5nIDE0IDAgUj4+ZW5kb2JqCjUgMCBvYmoKPDwvVHlwZS9DYXRh
+bG9nL1BhZ2VzIDEgMCBSPj5lbmRvYmoKNiAwIG9iago8PC9UeXBlL1BhZ2UvQ29udGVudHMgOSAw
+IFIvUmVzb3VyY2VzPDwvRm9udCA4IDAgUi9FeHRHU3RhdGUgMiAwIFI+Pi9QYXJlbnQgMSAwIFI+
+PmVuZG9iago3IDAgb2JqCjw8L1R5cGUvUGFnZS9Db250ZW50cyAxMSAwIFIvUmVzb3VyY2VzPDwv
+Rm9udCAxMCAwIFIvRXh0R1N0YXRlIDIgMCBSPj4vUGFyZW50IDEgMCBSPj5lbmRvYmoKOCAwIG9i
+ago8PC9SOCA0IDAgUi9SOSAzIDAgUi9SMTAgMTMgMCBSPj5lbmRvYmoKOSAwIG9iago8PC9GaWx0
+ZXIvRmxhdGVEZWNvZGUvTGVuZ3RoIDIzMzg+PnN0cmVhbQp42sVY227cRhJ911c0ggDhLDxtNu8E
+ggW8krJSIFuKxF14IeSBIntmuOGQE5Kj8fyDfyX/uKdvvI3leJ0sFrItY6YvVadOnarqs1/PbMqI
+LX7072xLXt+HZN3i/3/H3zX59YzJBUT/woq/JWev7yPxQbIiah8joUPC2KVRTJItYW5EXZckB2Kt
+eVfV1arhfFVXXWuxBUnw599njmPTIMDeJBf/YCl/T24K+d0S9vgkyYjj0EgtEUcG6shnTtZymS2W
+MN+nzFGLrJPLzHEOi8Xi1/cx7KaxL0xfunFE/Qi/A7n53ZvxqdSPXX3q20v5xeA0TPfskCxxr7H+
+ce4p+Y3k9cLxrUNV1mlO0ionRdV2aVkSteCwKbINydKqqjvyxEletF1TPC1YTOPYCa19x3NSVyQl
+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
+lukjP1B0MijquhqpwRam/EE9CaAwF2qQMqT3BgA7z5BzLJW/37uy9Nl3TYu8HhVOpPIl+tTA4lvR
+tJZe5jxlmIQ6uItes1GeDIvBzSkQsLhrgHRtBZxrTb0vyt7jnHGBFR9IH2PKE3fluDVwCy4cutY1
+sTX7Q1Vn9Sv6Dh3qdUqYxFx6wOxd1fceEkZ5UZtVW4G9L5N4ytmaUFbm/fdLg4510dq2T8lPNMWa
++Akb3bT7w2XfFZd6mKG7nXXnKi3WCCZRKFJQDEIaivS67Mn5MqNiIJ5VaW6+lyb/kTAsz0/CWNx9
+msFZzKSIvtwv7qwwPv9UGRYd7pBNt1W3sdMeYh3qalNnexu26Q6HyjcpVGHXQpjkmvZkDejQGCaD
+COikYawrG8WNb3Ki8td3wz5whyAJFjRXvIym/mirc5jsfNRa0aMG+2VfbLYtOropJJiIqvrJZYoq
+wLOG5S7tTIupXec5NLsuljNY9a75nZ2FDdRY9QDPKYcmg/MBJg707WEyAZ7pPBCwtiQPK+MIW+eS
+GFrSYFBNBQtqZmGUR6uu3k2uw/b6j3kiIEWSBPV15T/FwWOvFZ0MFIYHLyOVAjyEkpBemU/Ts55I
+uPh0aMxxW6y205ECKzYJRWQNOhqgP3xmCHTXD1h7AdYrl6FYiy7xm8ttg2o9HbXwLCEDct0h32dT
+1YGJOIFvM+u5W7eNl5uCt8NokV6+ayy5TgDP56a06rt4hY3eN/1TzK/SDCZTbZ47mDA5HphNTvoI
+gk0UlgJcnF4Pt1/G70Ycax0U9PbzlETgJo75aJnuTNYY1BiYXePFDbm46q1yF6Yot1mdoz9mjPcG
+Vdutthn6pfZH+MmNjVgxf/TbEd4BzLvDufnVSyPGbti7scMZPde5f74l4kLiVPjikuFZNafuIXi0
+akfjR56SWFAxhvgNkMe+EKD8WPexJCQy7E/qvrtLrz7Bz7/NjhNUZW5kc3RyZWFtIGVuZG9iagox
+MiAwIG9iago8PC9UeXBlL0V4dEdTdGF0ZS9PUE0gMT4+ZW5kb2JqCjEzIDAgb2JqCjw8L1R5cGUv
+Rm9udC9TdWJ0eXBlL1R5cGUxL0Jhc2VGb250L1RpbWVzLUl0YWxpYz4+ZW5kb2JqCjE0IDAgb2Jq
+Cjw8L1R5cGUvRW5jb2RpbmcvRGlmZmVyZW5jZXNbMTQwL2ZpIDE3My9taW51c10+PmVuZG9iagox
+NSAwIG9iago8PC9DcmVhdGlvbkRhdGUoRDoyMDExMDEzMDIzNTMxMCswMScwMCcpL01vZERhdGUo
+RDoyMDExMDEzMDIzNTMxMCswMScwMCcpL1Byb2R1Y2VyKEdQTCBHaG9zdHNjcmlwdCA4LjcxKS9D
+cmVhdG9yKGdyb2ZmIHZlcnNpb24gMS4yMC4xKT4+ZW5kb2JqCjE2IDAgb2JqCjw8L0luZm8gMTUg
+MCBSL0xlbmd0aCAzNC9Sb290IDUgMCBSL1NpemUgMTcvVHlwZS9YUmVmL1dbMCAyIDBdPj5zdHJl
+YW0KAAAADwBdAHoAuQEJATUBlwH7AisLkAu2ESQRTRGPEc8SZ2VuZHN0cmVhbSBlbmRvYmoKc3Rh
+cnR4cmVmCjQ3MTEKJSVFT0YK
+]]
+
+script_md5='eb97b3fe32b28ead5183275ad32699b8'
+man_md5='f850d910dd96ee27cecdb3772047d247'
+sman_md5='fb2b0f7699db8e627d4e26b730e94928'
+manpdf_md5='415b51f7c80a4abe8d0a667a04c9d525'
+
+--> !!END-INSERTED-FILES!!
+
+--'
+
+isdir=lfs.isdir
+isfile=lfs.isfile
+mkdir=lfs.mkdir
+readdir=lfs.dir
+exit=os.exit
+remove=os.remove
+execute=os.execute
+write=io.write
+
+kpse.set_program_name('texlua')
+texdir=kpse.var_value('SELFAUTOPARENT')
+bindir=kpse.var_value('SELFAUTODIR')
+exedir=kpse.var_value('SELFAUTOLOC')
+texmflocal=kpse.var_value('TEXMFLOCAL')
+
+if isdir(texdir .. '/texmf') then
+  texmf_dir='/texmf'
+else
+  texmf_dir='/texmf-dist'
+end
+
+scriptdir=texdir ..texmf_dir .. '/scripts'
+instdir=texdir .. texmf_dir .. '/scripts/getnonfreefonts'
+mandir=texdir .. texmf_dir .. '/doc/man/man1'
+docdir=texmflocal .. '/doc/man/man1'
+
+symlink='../..' .. texmf_dir .. '/scripts/getnonfreefonts/getnonfreefonts.pl'
+
+--[[
+print ('TEXDIR='..texdir)
+print ('BINDIR='..bindir)
+print ('EXEDIR='..exedir)
+print ('SCRIPTDIR='..scriptdir)
+print ('MANDIR='..mandir)
+print ('INSTDIR='..instdir)
+--]]
+
+done  ='  [done]\n'
+failed='[failed]\n'
+ok    ='    [ok]\n'
+
+
+if ltn12 then
+  base64dec=ltn12.filter.chain(mime.decode('base64'))
+end
+
+function message (text)
+  write(string.format("%-70s ", text..' ...'))
+end
+
+function detect_system ()
+  -- The operating system we are currently using is derived from
+  -- SELFAUTOLOC (exedir). 
+  system=(string.gsub(exedir, '.*/', ''))
+  if string.match(system, 'bin') then
+    write ('Detected System: ' .. 'unknown '.. os.name .. '\n')
+    multiplatform=false
+  else
+    write ('Detected System: ' .. system .. '\n')
+    multiplatform=true
+  end
+end
+
+function detect_installation ()
+  if multiplatform then
+    if isdir (scriptdir) then
+      write('Detected Installation: '..texdir..'\n')
+      getnonfreefonts='getnonfreefonts.pl'
+    else
+      write('Your TeX System seems to be broken.  Can\'t continue.\n')
+      exit (1)
+    end
+  else
+    write('Detected Installation: ' ..bindir.. 
+          ' (installing in ' .. string.gsub(BINDIR,'/bin$','') .. ')\n')
+    getnonfreefonts='getnonfreefonts'
+    instdir=BINDIR
+    mandir=MANDIR
+  end
+end
+
+function md5.hex(s)
+  -- Return the MD5 sum as a hexadecimal string.
+  -- The argument is a string (usually the content of a file).  
+  return (string.gsub(md5.sum(s), ".", 
+  function (c) return string.format("%02x", string.byte(c)) end))
+end
+
+
+function check_md5sum (name, path, md5sum)
+  -- There is a bug in older versions of Lua's MD5 library which leads
+  -- to wrong checksums on 64 bit systems.  We check wether it works
+  -- and skip the md5 check if necessary.  Many thanks to Aditya
+  -- Mahajan for the proposal.
+  if md5.hex("abcdefghijklmnopqrstuvwxyz") ==
+        "c3fcd3d76192e4007dfb496cca67e13b" then
+    local fh=assert(io.open(path..'/'..name, 'rb'))
+    content=fh:read("*all")
+    fh:close()
+    local checksum=md5.hex(content)
+    message ('md5sum: '..checksum..' '..name) 
+    if checksum == md5sum then
+      write(ok)
+    else
+      write(failed)
+      exit(1)
+    end
+  end
+end
+
+
+function install_file (name, path, content)
+  -- The argument 'content' refers to the content of the here-documents 
+  mkdirhier(path)
+  local file = path..'/'..name
+  if multiplatform then
+    message ('Installing '..file:gsub('^'..texdir..'/', ''))
+  else
+    message ('Installing '..file)
+  end
+  -- remove existing file due to bug in former release
+  if isfile(file) then assert(remove(file)) end
+  local fh=assert(io.open(file, 'wb'))
+  fh:write(content)
+  fh:close()
+  write(done)
+end
+
+
+function check_writable (dir)
+  if lfs.access then
+    message ('Checking Permissions: ' .. perms)
+    if lfs.access(dir, 'w') then
+      write (ok)
+    else
+      write '\nSorry, you need admin privileges in order to continue.\n'
+      exit (1)
+    end
+  end
+end
+
+
+function fix_permissions ()
+  -- getnonfreefonts.pl must be executable on Unix.  We also make sure
+  -- that manual pages are not executable.  Necessary if someone
+  -- installed them under Windows.
+  if os.type == 'unix' then
+    message('Fixing File Permissions')
+    execute('chmod a+x '..instdir..'/'..getnonfreefonts)
+    execute('chmod a-x '..mandir..'/getnonfreefonts.1')
+    execute('chmod a-x '..mandir..'/getnonfreefonts-sys.1')
+    write(done)
+  end
+end
+
+function create_dir (dir)
+  if not isdir(dir) then
+    message('mkdir '..dir)
+    mkdir (dir)
+    if isdir(dir) then
+      write(done)
+    else
+      write(failed)
+      write("Sorry, couldn't create directory "..dir..'\n')  
+      exit (1)
+    end
+  end
+end
+
+
+function mkdirhier (path)
+  local dirs=string.explode(path, '/')
+  for i=2, #dirs do
+    local dir=table.concat(dirs, '/', 1, i)
+    if not isdir(dir) then
+      create_dir(dir)
+    end
+  end
+end
+
+
+function create_symlink (dir)
+  if os.type == 'unix' then
+    execute('cd ' .. dir ..
+            ' && ln -sf getnonfreefonts getnonfreefonts-sys')
+  end
+end
+
+function create_symlinks (platform, exedir)
+  -- We are using shell escapes here because then we don't have to
+  -- keep track of the current working directory.
+  message("Creating symlinks in 'bin/"..platform.."'")
+  execute('cd '..exedir..' && ln -sf '..symlink..' getnonfreefonts')
+  execute('cd '..exedir..' && ln -sf '..symlink..' getnonfreefonts-sys')
+  write(done)
+end
+
+function create_wrappers (platform, exedir)
+  -- We don't create a new wrapper, we simply steal an existing one.
+  local cp
+  if os.type == 'windows' then
+    exedir = exedir:gsub('/', '\\')
+    cp='copy /b "'..exedir..'\\%s" "'..exedir..'\\%s"'
+  else
+    cp='cp -p '..exedir..'/%s '..exedir..'/%s'
+  end
+  if isfile(exedir..'/rungs.exe') then
+    wrapper='rungs.exe';
+  else -- TL 2008
+    wrapper='rungs.bat';
+  end
+  message("Creating wrappers in 'bin/"..platform.."'")
+  execute(cp:format(wrapper, 'getnonfreefonts.exe'))
+  execute(cp:format(wrapper, 'getnonfreefonts-sys.exe'))
+  write(done)
+end
+
+function create_symlinks_and_wrappers (path)
+  local otherplatforms={}
+  for file in readdir(path) do
+    if file ~= "." and file ~= ".." then
+      local exedir = path..'/'..file
+      local platform = file
+      -- platform expands to something like "x86_64-linux".
+      if os.type == 'unix' then
+        if platform == 'win32' then
+          create_wrappers (platform, exedir)
+        else
+          create_symlinks (platform, exedir)
+        end
+      else -- We're on Windows, sigh!
+           -- We can't create symlinks but we can issue a warning
+           -- if binaries for other platforms are available.
+        if platform == 'win32' then
+          create_wrappers (platform, exedir)
+        else 
+          otherplatforms[#otherplatforms+1]=platform
+        end
+        if #otherplatforms > 0 then
+          write('You have binaries for Unix installed.\n' ..
+                'Please run this script on Unix again in ' ..
+                'order to create the symlinks.\n')
+        end
+      end
+    end
+  end
+end
+
+
+function texhash (dir)
+  execute ('texhash '..'"'..dir..'"')
+end
+
+
+-- main --
+detect_system ()
+detect_installation ()
+
+if multiplatform then 
+  check_writable (scriptdir)
+  create_dir (instdir) 
+  docdir=mandir
+else
+  check_writable (instdir)
+end
+
+install_file (getnonfreefonts,            instdir, script)
+install_file ('getnonfreefonts.1',        mandir,  man)
+install_file ('getnonfreefonts-sys.1',    mandir,  sman)
+
+if ltn12 then
+  install_file ('getnonfreefonts.man1.pdf',     docdir,  base64dec(manpdf))
+  install_file ('getnonfreefonts-sys.man1.pdf', docdir,  base64dec(manpdf))
+end
+
+check_md5sum (getnonfreefonts,            instdir, script_md5)
+check_md5sum ('getnonfreefonts.1',        mandir,  man_md5)
+check_md5sum ('getnonfreefonts-sys.1',    mandir,  sman_md5)
+
+if ltn12 then
+  check_md5sum ('getnonfreefonts.man1.pdf',     docdir,  manpdf_md5)
+--check_md5sum ('getnonfreefonts-sys.man1.pdf', docdir,  manpdf_md5)
+end
+
+fix_permissions ()
+
+if multiplatform then
+  create_symlinks_and_wrappers (bindir)
+  texhash (texdir..texmf_dir)
+else
+  create_symlink (instdir) -- for getnonfreefonts-sys
+  texhash (texmflocal)
+end
+
+
+--[[
+  Local Variables:
+    lua-indent-level: 2
+    tab-width: 2
+    indent-tabs-mode: nil
+  End:
+  vim:set tabstop=2 expandtab:
+--]]
