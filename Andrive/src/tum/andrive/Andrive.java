@@ -13,7 +13,6 @@ import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.objdetect.CascadeClassifier;
 import org.opencv.core.Core;
-import org.opencv.core.CvType;
 import org.opencv.core.Rect;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfRect;
@@ -26,14 +25,13 @@ import android.content.Context;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.SurfaceView;
 import android.view.WindowManager;
 
 
 public class Andrive extends Activity implements CvCameraViewListener2 {
 
 	private static final String TAG = "OCVSample::Activity";
-    private static final Scalar    FACE_RECT_COLOR     = new Scalar(0, 255, 0, 255);
+    private static final Scalar RECT_COLOR = new Scalar(0, 255, 0, 255);
 
 	private Mat mRgba;
 	private Mat mGray;
@@ -43,8 +41,11 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
     private CascadeClassifier javaClassifier;
 
     private int relativeObjSize = 0;
-	
+    
+    private GPSListener gps;
+
 	private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
+
 		@Override
 		public void onManagerConnected(int status) {
 			switch (status) {
@@ -106,10 +107,12 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
     protected void onCreate(Bundle savedInstanceState) {
     	Log.i(TAG, "called onCreate");
         super.onCreate(savedInstanceState);
+
+        gps = new GPSListener(this);
+        		
     	getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_andrive);
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.AndriveView);
-        mOpenCvCameraView.setVisibility(SurfaceView.VISIBLE);
         mOpenCvCameraView.setCvCameraViewListener(this);
     }
 
@@ -131,12 +134,14 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
     
     @Override
     public void onCameraViewStarted(int width, int height) {
-    	mRgba = new Mat(height, width, CvType.CV_8UC4);
+    	mGray = new Mat();
+    	mRgba = new Mat();
     };
     
     @Override
     public void onCameraViewStopped() {
     	mRgba.release();
+        mGray.release();
     };
     
     @Override
@@ -156,7 +161,7 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
 
         Rect[] objArray = objs.toArray();
         for (int i = 0; i < objArray.length; i++)
-            Core.rectangle(mRgba, objArray[i].tl(), objArray[i].br(), FACE_RECT_COLOR, 3);
+            Core.rectangle(mRgba, objArray[i].tl(), objArray[i].br(), RECT_COLOR, 3);
 
         return mRgba;
 

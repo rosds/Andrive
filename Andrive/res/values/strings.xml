@@ -3,4 +3,5 @@
     <string name="app_name">Andrive</string>
     <string name="action_java_detector">Java Detector</string>
     <string name="action_native_detector">Native Detector</string>
+    <string name="info">Wating for GPS signal...</string>
 </resources>
