@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.Math;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -160,8 +161,11 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
         new Size(relativeObjSize, relativeObjSize), new Size());
 
         Rect[] objArray = objs.toArray();
-        for (int i = 0; i < objArray.length; i++)
+        for (int i = 0; i < objArray.length; i++) {
+            String distance = String.format("%.2fm", pixels_to_meters(objArray[i].width));
             Core.rectangle(mRgba, objArray[i].tl(), objArray[i].br(), RECT_COLOR, 3);
+            Core.putText(mRgba, distance, objArray[i].tl(), Core.FONT_HERSHEY_SIMPLEX, 1.5, RECT_COLOR, 4);
+        }
 
         return mRgba;
 
@@ -185,4 +189,22 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
     public native void nativeThreshold(long input, long output);
     public native void faceDetect(long input, long output);
     public native void loadClassifierXml(String path);
+
+    
+    /**
+     * This function converts the width in pixels of the classified
+     * bounding box containing the car to a distance in meters. This 
+     * is done with a fitted exponential model of the form
+     * M(x) = a * exp(b * x) + c * exp(d * x)
+     * @param x width in pixels of the classification rectangle
+     * @return distance in meters to the vehicle
+     */
+    public static double pixels_to_meters(int x) {
+        double a = 162.220606414207;
+        double b = -0.0136042729498191;
+        double c = 15.4820029252565;
+        double d = -0.00118712463148137;
+        return a * Math.exp(b * x) + c * Math.exp(d * x); 
+    }
+
 }
