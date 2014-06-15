@@ -5,6 +5,12 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.Math;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Locale;
+import java.util.Queue;
 
 import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
@@ -13,7 +19,10 @@ import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
 import org.opencv.objdetect.CascadeClassifier;
+import org.opencv.objdetect.Objdetect;
 import org.opencv.core.Core;
+import org.opencv.core.MatOfInt;
+import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfRect;
@@ -33,11 +42,31 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
 
 	private static final String TAG = "OCVSample::Activity";
     private static final Scalar RECT_COLOR = new Scalar(0, 255, 0, 255);
-
+    private static final Scalar colors[] = new Scalar[] {
+		new Scalar(255, 128, 128, 255),
+		new Scalar(255, 160, 128, 255),
+		new Scalar(255, 255, 152, 255),
+		new Scalar(152, 255, 152, 255),
+		new Scalar(128, 255, 208, 255),
+		new Scalar(128, 255, 255, 255),
+		new Scalar(128, 160, 255, 255),
+		new Scalar(128, 128, 255, 255),
+		new Scalar(192, 128, 255, 255),
+		new Scalar(255, 128, 255, 255)
+    };
+    
+    /** Size of the frame window used to false positive filtering **/
+    private static final int N = 3;
+    
+    private int v_id = 1;
+    private LinkedList<Rect> vehicles = new LinkedList<Rect>();
+    private LinkedList<Integer> vids = new LinkedList<Integer>();
+    
 	private Mat mRgba;
 	private Mat mGray;
     private File mCascadeFile;
 	private CameraBridgeViewBase mOpenCvCameraView;
+	private Queue<MatOfRect> detection_window;
 
     private CascadeClassifier javaClassifier;
 
@@ -110,6 +139,7 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
         super.onCreate(savedInstanceState);
 
         gps = new GPSListener(this);
+        detection_window = new LinkedList<MatOfRect>();
         		
     	getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         setContentView(R.layout.activity_andrive);
@@ -155,16 +185,20 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
 
         // Adjust minimun size for objects in the image
         int height = mGray.rows();
-        relativeObjSize = Math.round(height * 0.2f);
+        relativeObjSize = Math.round(height * 0.12f);
         
-        javaClassifier.detectMultiScale(mGray, objs, 1.1, 2, 2, // TODO: objdetect.CV_HAAR_SCALE_IMAGE
+        javaClassifier.detectMultiScale(mGray, objs, 1.1, 4, 2, // TODO: objdetect.CV_HAAR_SCALE_IMAGE
         new Size(relativeObjSize, relativeObjSize), new Size());
 
-        Rect[] objArray = objs.toArray();
+        track_vehicles(objs);
+        
+        /** Draw the final classification **/
+        Rect[] objArray = vehicles.toArray(new Rect[0]);
         for (int i = 0; i < objArray.length; i++) {
             String distance = String.format("%.2fm", pixels_to_meters(objArray[i].width));
-            Core.rectangle(mRgba, objArray[i].tl(), objArray[i].br(), RECT_COLOR, 3);
-            Core.putText(mRgba, distance, objArray[i].tl(), Core.FONT_HERSHEY_SIMPLEX, 1.5, RECT_COLOR, 4);
+            Scalar color = colors[vids.get(i) % colors.length];
+            Core.rectangle(mRgba, objArray[i].tl(), objArray[i].br(), color, 3);
+            Core.putText(mRgba, distance, objArray[i].tl(), Core.FONT_HERSHEY_SIMPLEX, 1.5, color, 4);
         }
 
         return mRgba;
@@ -207,4 +241,72 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
         return a * Math.exp(b * x) + c * Math.exp(d * x); 
     }
 
+    
+    /**
+     * This function groups the persistent classifications among N
+     * frames in the detection_window.
+     * @param frame is the actual frame classification result
+     * @return The consistent classified rectangles.
+     */
+    private List<Rect> filter_detection_window(MatOfRect frame){
+    	MatOfRect group = new MatOfRect();
+    	List<Rect> ls = new ArrayList<Rect>();
+    	
+    	detection_window.add(frame);
+    	if (detection_window.size() == N) {
+    		
+    		/** Join the detection_window in one MatOfRect **/
+    		Iterator<MatOfRect> it = detection_window.iterator();
+    		while (it.hasNext()) {
+    			ls.addAll(it.next().toList());
+    		}
+    		group.fromList(ls);
+            Objdetect.groupRectangles(group, new MatOfInt(), N - 1, 0.7);
+            detection_window.poll();
+    	}
+    	
+    	return group.toList();
+    }
+    
+    
+    /**
+     * This function keeps track of the vehicles being detected on each
+     * frame. The final output is keep in the lists vehicles and vids.
+     * @param frame
+     */
+    private void track_vehicles(MatOfRect frame) {
+    	List<Rect> current_frame = filter_detection_window(frame);
+    	LinkedList<Rect> final_vehicles = new LinkedList<Rect>();
+    	LinkedList<Integer> final_ids = new LinkedList<Integer>();
+    	
+    	Iterator<Rect> it = current_frame.iterator();
+
+    	while (it.hasNext()) {
+    		Rect r1 = it.next();
+    		Point c1 = new Point((r1.x + r1.width) / 2.0f, (r1.y + r1.height) / 2.0f);
+    			
+    		int id = v_id;
+    		for (int j = 0; j < vehicles.size(); j++) {
+    			Rect r2 = vehicles.get(j);
+    			Point c2 = new Point((r2.x + r2.width) / 2.0f, (r2.y + r2.height) / 2.0f);
+    			Point c3 = new Point(c1.x - c2.x, c1.y - c2.y);
+    			
+    			double norm = Math.sqrt(Math.pow(c3.x, 2) + Math.pow(c3.y, 2));
+    			if (norm < 20.0f) {
+    				id = vids.get(j);
+    				break;
+    			}
+    		}
+    		
+			final_vehicles.add(r1);
+			final_ids.add(id);
+			
+    		if (id == v_id) { 
+    			v_id++; 
+    		}
+    	}
+    	
+    	vehicles = final_vehicles;
+    	vids = final_ids;
+    }
 }
