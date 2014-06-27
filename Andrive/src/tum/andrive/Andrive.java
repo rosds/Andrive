@@ -18,6 +18,7 @@ import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.CascadeClassifier;
 import org.opencv.objdetect.Objdetect;
 import org.opencv.core.Core;
@@ -180,10 +181,11 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
         
         mRgba = inputFrame.rgba();
         mGray = inputFrame.gray();
-
+        
         MatOfRect objs = new MatOfRect();
 
         // Adjust minimun size for objects in the image
+        int width = mGray.cols();
         int height = mGray.rows();
         relativeObjSize = Math.round(height * 0.12f);
         
@@ -195,7 +197,7 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
         /** Draw the final classification **/
         Rect[] objArray = vehicles.toArray(new Rect[0]);
         for (int i = 0; i < objArray.length; i++) {
-            String distance = String.format("%.2fm", pixels_to_meters(objArray[i].width));
+            String distance = String.format("%.2fm", pixels_to_meters((double)objArray[i].width / (double)width));
             Scalar color = colors[vids.get(i) % colors.length];
             Core.rectangle(mRgba, objArray[i].tl(), objArray[i].br(), color, 3);
             Core.putText(mRgba, distance, objArray[i].tl(), Core.FONT_HERSHEY_SIMPLEX, 1.5, color, 4);
@@ -226,18 +228,20 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
 
     
     /**
-     * This function converts the width in pixels of the classified
-     * bounding box containing the car to a distance in meters. This 
-     * is done with a fitted exponential model of the form
+     * \brief 
+     * This function converts the normalized width in pixels of 
+     * the classified bounding box containing the car to a distance 
+     * in meters. This is done with a fitted exponential model of the 
+     * form:
      * M(x) = a * exp(b * x) + c * exp(d * x)
-     * @param x width in pixels of the classification rectangle
+     * @param[in] x width in pixels of the classification rectangle
      * @return distance in meters to the vehicle
      */
-    public static double pixels_to_meters(int x) {
-        double a = 162.220606414207;
-        double b = -0.0136042729498191;
-        double c = 15.4820029252565;
-        double d = -0.00118712463148137;
+    public static double pixels_to_meters(double x) {
+        double a = 286.2713350528750;
+        double b = -75.44461973326037;
+        double c = 36.00759908705765;
+        double d = -8.988638172976206;
         return a * Math.exp(b * x) + c * Math.exp(d * x); 
     }
 
@@ -285,7 +289,7 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
     		Rect r1 = it.next();
     		Point c1 = new Point((r1.x + r1.width) / 2.0f, (r1.y + r1.height) / 2.0f);
     			
-    		int id = v_id;
+    		int id = v_id;	
     		for (int j = 0; j < vehicles.size(); j++) {
     			Rect r2 = vehicles.get(j);
     			Point c2 = new Point((r2.x + r2.width) / 2.0f, (r2.y + r2.height) / 2.0f);
