@@ -139,7 +139,7 @@ automark
 
 \usepackage{url}
 
-\usepackage[plainpages=false,ngerman,pdfpagelabels=true,bookmarks=true, 
+\usepackage[plainpages=false,pdfpagelabels=true,bookmarks=true, 
 						%bookmarksopen=true, % waehrend testen offen lassen spaeter zumachen
 						pdfpagemode={UseOutlines},pdfstartview={FitV},pdfborder={0 0 0},
 						pdfauthor={\myname}, 
@@ -161,7 +161,10 @@ automark
 						
 
 	\usepackage[round]{natbib}
- 
+    \usepackage{amsmath} 
+    \usepackage{algorithm}
+    \usepackage[noend]{algpseudocode}
+    \usepackage{subcaption}
 	\usepackage{geometry}
 %	\geometry{left=3.5cm,textwidth=15cm,top=2.5cm,textheight=24.5cm}
 %	\geometry{left=2.5cm, right=2.5cm, bottom=3cm, top=2.5cm}
@@ -210,9 +213,9 @@ automark
 \usepackage[dvips]{graphicx}
 \usepackage{floatflt,epsfig} 
 
-\usepackage{ngerman} % neue deutsche Rechtschreibung
+% \usepackage{ngerman} % neue deutsche Rechtschreibung
 \usepackage[latin1]{inputenc} % latin1-Kodierung für Umlaute
-\usepackage[ngerman]{babel}  % Silbentrennung
+% \usepackage[ngerman]{babel}  % Silbentrennung
 \usepackage[T1]{fontenc}
 \usepackage[scaled]{uarial} % Schriftart Arial
 \usepackage[font=small,labelfont=it]{caption} %Überschriften kursiv
@@ -234,7 +237,7 @@ automark
 \usepackage{color} % Farben
 \usepackage{colortbl} % tabellen einfärben
 \usepackage{floatflt} % graphiken mit textumfluss
-\usepackage{subfigure} % graphiken nebeneinander mit (a) (b)
+% \usepackage{subfigure} % graphiken nebeneinander mit (a) (b)
 \usepackage[absolute]{textpos} % absolute positioning
 
 
@@ -242,7 +245,7 @@ automark
 \usepackage{listings} % programmcode als listings darstellen
 
 %workaround
-\addto\captionsngerman{
- \renewcommand{\figurename}{Abbildung}%
-}
+% \addto\captionsngerman{
+%  \renewcommand{\figurename}{Abbildung}%
+% }
 
