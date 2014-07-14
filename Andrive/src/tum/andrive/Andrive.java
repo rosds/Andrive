@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Locale;
 import java.util.Queue;
 
 import org.opencv.android.BaseLoaderCallback;
@@ -18,7 +17,6 @@ import org.opencv.android.CameraBridgeViewBase.CvCameraViewFrame;
 import org.opencv.android.CameraBridgeViewBase.CvCameraViewListener2;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
-import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.CascadeClassifier;
 import org.opencv.objdetect.Objdetect;
 import org.opencv.core.Core;
@@ -41,8 +39,6 @@ import android.view.WindowManager;
 
 public class Andrive extends Activity implements CvCameraViewListener2 {
 
-	private static final String TAG = "OCVSample::Activity";
-    private static final Scalar RECT_COLOR = new Scalar(0, 255, 0, 255);
     private static final Scalar colors[] = new Scalar[] {
 		new Scalar(255, 128, 128, 255),
 		new Scalar(255, 160, 128, 255),
@@ -55,6 +51,13 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
 		new Scalar(192, 128, 255, 255),
 		new Scalar(255, 128, 255, 255)
     };
+	private static final String TAG = "OCVSample::Activity";
+    private static final int JAVA_DETECTOR = 0;
+    private static final int NATIVE_DETECTOR = 1;
+    
+    private MenuItem mItemType;
+    private int mDetectorType = JAVA_DETECTOR;
+    private String[] mDetectorName;
     
     /** Size of the frame window used to false positive filtering **/
     private static final int N = 3;
@@ -70,6 +73,7 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
 	private Queue<MatOfRect> detection_window;
 
     private CascadeClassifier javaClassifier;
+    private DetectionBasedTracker mNativeDetector;
 
     private int relativeObjSize = 0;
     
@@ -109,6 +113,7 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
                         } else
                             Log.i(TAG, "Loaded cascade classifier from " + mCascadeFile.getAbsolutePath());
 
+                        mNativeDetector = new DetectionBasedTracker(mCascadeFile.getAbsolutePath(), 0);
                         cascadeDir.delete();
 
                     } catch (IOException e) {
@@ -127,6 +132,12 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
 
 		}
 	};
+	
+	public Andrive() {
+		mDetectorName = new String[2];
+		mDetectorName[JAVA_DETECTOR] = "Java Detector";
+		mDetectorName[NATIVE_DETECTOR] = "Native (tracking)";
+	}
 	
 	@Override
 	public void onResume() {
@@ -189,8 +200,15 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
         int height = mGray.rows();
         relativeObjSize = Math.round(height * 0.12f);
         
-        javaClassifier.detectMultiScale(mGray, objs, 1.1, 4, 2, // TODO: objdetect.CV_HAAR_SCALE_IMAGE
-        new Size(relativeObjSize, relativeObjSize), new Size());
+        mNativeDetector.setMinDetectionSize(relativeObjSize);
+        
+        if (mDetectorType == JAVA_DETECTOR) {
+        	javaClassifier.detectMultiScale(mGray, objs, 1.1, 4, 2, // TODO: objdetect.CV_HAAR_SCALE_IMAGE
+        			new Size(relativeObjSize, relativeObjSize), new Size());
+        }
+        else {
+        	mNativeDetector.detect(mGray, objs);
+        }
 
         track_vehicles(objs);
         
@@ -212,20 +230,36 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.andrive, menu);
+        // getMenuInflater().inflate(R.menu.andrive, menu);
+        mItemType = menu.add(mDetectorName[mDetectorType]);
         return true;
     }
     
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         Log.i(TAG, "called onOptionsItemSelected; selected item: " + item);
+        if (item == mItemType) {
+        	int tmpDetectorType = (mDetectorType + 1) % mDetectorName.length;
+        	item.setTitle(mDetectorName[tmpDetectorType]);
+        	setDetectorType(tmpDetectorType);
+        }
         return true;
     }
     
-    public native void nativeThreshold(long input, long output);
-    public native void faceDetect(long input, long output);
-    public native void loadClassifierXml(String path);
-
+    private void setDetectorType(int type) {
+    	if (mDetectorType != type) {
+    		mDetectorType = type;
+    		
+    		if (type == NATIVE_DETECTOR) {
+    			Log.i(TAG, "Native Detector");
+    			mNativeDetector.start();
+    		}
+    		else {
+        		Log.i(TAG, "Cascade Java Detector enabled");
+        		mNativeDetector.stop();
+        	}
+    	}
+    }
     
     /**
      * \brief 

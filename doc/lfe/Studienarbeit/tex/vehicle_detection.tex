@@ -14,7 +14,7 @@ chapter we are going to present the theory and the method that was considered to
 tackle this problem.
 
 \section{Object detection and image classification} % (fold)
-\label{sec:Object-detection-and-image-classification}
+\label{sec:objectdetec}
 
 In this section we are going to get through the theoretical framework involved
 in the process of detecting objects in camera images. As the reader may know,
@@ -324,7 +324,6 @@ size returned by the classifier due to the search in different scales.
 
 % section Classification refinement (end)
 
-
 \section{Distance estimation} % (fold)
 \label{sec:Distance-estimation}
 
@@ -409,3 +408,94 @@ image. With this results we can find  an approximated distance to the
 vehicle, giving an initial solution to the problem of distance estimation.
 
 % section Distance estimation (end)
+
+\section{Vehicle tracking} % (fold)
+\label{sec:vehicle-tracking}
+
+Once the classification is done, the estimation of the distance should be
+associated to its respective vehicle. For this reason, it is necessary to track
+the vehicles appearing in the image. To do this, we observe that each vehicle has 
+a certain motion and position from frame to frame. Ideally, given the
+assumptions we made about the fixed camera view, the motion and position of each
+vehicle should be similar between frames.
+
+Traditionally, the \textit{optical flow} is known as the apparent motion of
+objects in the image caused by the relative motion of the camera and the scene.
+This concept was study in maybe one of the most influential works in computer 
+vision done by \cite{lucas-kanade}. In this approach, the image derivatives are
+used to obtain a motion vector inside a small windows partitioning the image. 
+Later, these velocity vectors can be used with a mean-shift approach to get 
+the final position of the object.
+
+In principle, this technique could be used together with the classifier, giving
+the last one a starting point for the tracking. This is commonly done because
+usually the classification takes more time than the tracking. 
+
+[ INSERT HERE THE RESULTS ]
+
+In the case of
+this project, the classification is fast enough that it can be performed
+frame-wise. With this result, the tracking task is simplify to
+threshold the similarity between the classification regions. Basically, if a 
+rectangle appearing in two consequent frames have similar position and size, these
+two are consider to correspond to the same vehicle and an identification number
+is assigned. 
+
+In figure~\ref{fig:tracking} you can see four sequential images separated by 20
+frames in between. The color of the bounding boxes correspond to the identification 
+number assigned to a vehicle. For example, the vehicle inside the
+yellow box is tracked successfully in the entire sequence. Nevertheless, when a
+vehicle is not correctly classified in a particular frame, the tracking is lost.
+You can see this in the same figure, the vehicle inside the pink bounding box is 
+later labeled with the blue color, meaning that the tracking was lost at some point 
+and then rediscovered by the classifier. 
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}[b]{0.4\textwidth}
+\centering
+\includegraphics[width=0.9\linewidth]{img/tracking1.jpg}
+\vspace{5mm}
+\end{subfigure}
+\begin{subfigure}[b]{0.4\textwidth}
+\centering
+\includegraphics[width=0.9\linewidth]{img/tracking2.jpg}
+\vspace{5mm}
+\end{subfigure}
+\begin{subfigure}[b]{0.4\textwidth}
+\centering
+\includegraphics[width=0.9\linewidth]{img/tracking3.jpg}
+\end{subfigure}
+\begin{subfigure}[b]{0.4\textwidth}
+\centering
+\includegraphics[width=0.9\linewidth]{img/tracking4.jpg}
+\end{subfigure}
+\caption{Tracking of vehicles. The pictures shown here have 20 frames of
+separation.}
+\label{fig:tracking}
+\end{figure}
+
+% section vehicle-tracking (end)
+
+\section{Speed estimation} % (fold)
+\label{sec:speed-estimation}
+
+The missing peace to obtain the metric is to estimate the speed of vehicle with
+the on-board camera. In principle for this purpose, the same concept of
+\textit{optical flow} explained in the previous section could be applied.
+Nevertheless, nowadays is normal that Smart-phones have \textit{Global
+Positioning System} or GPS for short. With this technology is possible to
+estimate the speed in a more easy and accurate way. This is done by first
+estimating the position of the device.
+
+The GPS can estimate the actual position of the device using the received signal
+of at least 4 GPS satellites. The distance to each satellite is calculated with
+the transit time of the signal and the speed of light. There are other ways to 
+calculate position of the device, for example the same idea can also be applied 
+to the signal of antennas or even wireless networks access points.
+
+It is trivial to calculate the speed once we have at least two measured
+positions on time. The strength of this approach lies on the amount of
+measurements we can obtain in time and their accuracy.
+
+% section speed-estimation (end)

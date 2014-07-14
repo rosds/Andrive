@@ -1,0 +1,89 @@
+\chapter{Implementation and experiments}  
+\label{cha:android}
+
+Nowadays the Android operative system is the most popular platform for
+Smartphones and mobile devices. Due to this fact, there is a great interest in
+the development of all sort of applications and with it, many tools have
+been adapted to this platform for the use of the developers. One of these tools
+is the OpenCV library for computer vision by \cite{opencv}.
+
+This powerful library have already implemented the most common computer vision
+algorithms and methods. In particular we can find the Machine Learning approach
+for object detection in images explained in the previous
+section~\ref{sec:objectdetec}.  It was perfectly suited by the implementation of this
+project.
+
+In this chapter is going to be presented the details about the Android
+Application and the qualitative results on the performance of the application.
+
+\section{The Android Application} % (fold)
+\label{sec:androidapp}
+
+In this section, the structure of the application is going to be presented. The
+functionality of the main components is going to be explained aiming for future
+improvements. In the figure~\ref{fig:andrivedir} is illustrated the directory
+structure of the application.
+
+\begin{figure}
+    \centering\small
+    \begin{minipage}[t]{0.6\linewidth}
+        \dirtree{%
+            .1 Andrive/. 
+            .2 jni/. 
+            .3 Android.mk. 
+            .3 tum\_andrive\_DetectionBasedTracker.h.
+            .3 detector\_native\_source.cpp.
+            .2 src/. 
+            .3 tum/.
+            .4 andrive/.
+            .5 Andrive.java.
+            .5 GPSListener.java.
+            .5 DetectionBasedTracker.java.
+            .2 res/. 
+            .3 raw/. 
+            .4 cascade.xml. 
+        }
+    \end{minipage}
+\caption{Directory structure of the Android application}
+\label{fig:andrivedir}
+\end{figure}
+
+Maybe the most important file is the \textit{cascade.xml}. This file contains
+the learned classifier used for image classification and vehicle detection. This
+basically implies that it can be easily substituted by any other classifier for
+either improving the classification or detect other objects.
+
+Secondly, we have the source files under the \textit{src} directory. For the
+vehicle detection module we have basically two files. The
+\textit{DetectionBasedTracker.java} which defines the class with the same name.
+This class implements the image classification task. It reads the
+\textit{cascade.xml} file and use it to classified the images in the way
+described in the chapter~\ref{kap:vehicle-detection}. The second file is the
+\textit{GPSListener.java} which implements the class in charge of processing the
+GPS signal and extract the speed for the calculation of the Time Headway
+measurement (THM). 
+
+Finally in the \textit{jni} directory are the native source files used by the
+Java Native Interface (JNI). This native source is intended to accelerate the
+task of image classification by compiling the methods in the C++ programming
+language for the specific architecture. The class \textit{DetectionBasedTracker} 
+can call these methods and also their equivalent in the Java programming
+language.
+
+% section androidapp (end)
+
+\section{Training the classifier} % (fold)
+\label{sec:trainingClasssifier}
+
+In these section is going to be presented the steps for training the classifier. 
+
+% section trainingClasssifier (end)
+
+\section{Performance and running time} % (fold)
+\label{sec:running-time}
+
+
+
+% section Performance and running time (end)
+
+

@@ -15,7 +15,7 @@
         android:layout_height="wrap_content"
         android:text="@string/info"
         android:textColor="#FFF"
-        android:textSize="10sp"
+        android:textSize="12sp"
         android:id="@+id/info_text" />
 
 </RelativeLayout>
