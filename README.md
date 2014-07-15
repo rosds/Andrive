@@ -1,7 +1,7 @@
 Andrive
 =======
 
-![alt tag](https://github.com/alfonsoros88/Andrive/Andrive/tree/master/doc/imgs/ic_launcher.png)
+![alt tag](https://github.com/alfonsoros88/Andrive/blob/master/Andrive/doc/imgs/ic_launcher.png)
 
 Andrive is an application to measure the Time to Headway (THW) for driving
 evaluation. It was develop under the supervision of [Michael Krause](http://www.ergonomie.tum.de/author/krause/) 
