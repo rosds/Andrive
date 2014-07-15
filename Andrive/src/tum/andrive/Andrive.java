@@ -37,6 +37,34 @@ import android.view.MenuItem;
 import android.view.WindowManager;
 
 
+/**
+\mainpage Application Documentation
+
+\image html ic_launcher.png
+\image latex ic_launcher.png
+
+%Andrive is an application to measure the Time to Headway (THW) for driving
+evaluation. It was develop under the supervision of 
+<a href="http://www.ergonomie.tum.de/author/krause/">Michael Krause</a> from the
+Institute of Ergonomics at the 
+<a href="http://www.tum.de/">Technische Universität Müenchen (TUM)</a>.
+
+This application is mainly implemented using the 
+<a href="http://opencv.org">OpenCV library</a>. The current version performs
+- Rear view vehicle detection.
+- Distance calculation using classification region size.
+- Speed calculation using GPS.
+- THW calculation
+
+@author Alfonso Ros Dos Santos
+*/
+
+
+/**
+ * This class is the main activity.
+ * 
+ * @author Alfonso Ros Dos Santos
+ */
 public class Andrive extends Activity implements CvCameraViewListener2 {
 
     private static final Scalar colors[] = new Scalar[] {
@@ -56,7 +84,7 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
     private static final int NATIVE_DETECTOR = 1;
     
     private MenuItem mItemType;
-    private int mDetectorType = JAVA_DETECTOR;
+    private int mDetectorType = NATIVE_DETECTOR;
     private String[] mDetectorName;
     
     /** Size of the frame window used to false positive filtering **/
@@ -214,17 +242,17 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
         
         /** Draw the final classification **/
         Rect[] objArray = vehicles.toArray(new Rect[0]);
+        //Rect[] objArray = objs.toArray();
         for (int i = 0; i < objArray.length; i++) {
             String distance = String.format("%.2fm", pixels_to_meters((double)objArray[i].width / (double)width));
             Scalar color = colors[vids.get(i) % colors.length];
+            //Scalar color = colors[0];
             Core.rectangle(mRgba, objArray[i].tl(), objArray[i].br(), color, 3);
             Core.putText(mRgba, distance, objArray[i].tl(), Core.FONT_HERSHEY_SIMPLEX, 1.5, color, 4);
         }
 
+        objs = null;
         return mRgba;
-
-    	// nativeThreshold(inputFrame.rgba().getNativeObjAddr(), mRgba.getNativeObjAddr());
-    	// faceDetect(inputFrame.rgba().getNativeObjAddr(), mRgba.getNativeObjAddr());
     }
 
     @Override
@@ -262,7 +290,6 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
     }
     
     /**
-     * \brief 
      * This function converts the normalized width in pixels of 
      * the classified bounding box containing the car to a distance 
      * in meters. This is done with a fitted exponential model of the 

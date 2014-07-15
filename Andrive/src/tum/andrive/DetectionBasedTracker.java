@@ -3,6 +3,11 @@ package tum.andrive;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfRect;
 
+/**
+ * DetectionBasedTracker is the class handling the classifiers.
+ * 
+ * @author alfonso
+ */
 public class DetectionBasedTracker
 {
     public DetectionBasedTracker(String cascadeName, int minFaceSize) {

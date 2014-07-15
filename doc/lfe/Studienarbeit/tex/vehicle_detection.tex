@@ -429,14 +429,13 @@ the final position of the object.
 
 In principle, this technique could be used together with the classifier, giving
 the last one a starting point for the tracking. This is commonly done because
-usually the classification takes more time than the tracking. 
+usually the classification takes more time than the tracking. In this project we
+tested this approach by switching between a \textit{detection phase} and a
+\textit{tracking phase} periodically. This has proven to be more fast than
+performing a detection on each frame.
 
-[ INSERT HERE THE RESULTS ]
-
-In the case of
-this project, the classification is fast enough that it can be performed
-frame-wise. With this result, the tracking task is simplify to
-threshold the similarity between the classification regions. Basically, if a 
+Now we can assign an identification number to each vehicle by
+thresholding the similarity between the classification regions. Basically, if a 
 rectangle appearing in two consequent frames have similar position and size, these
 two are consider to correspond to the same vehicle and an identification number
 is assigned. 
