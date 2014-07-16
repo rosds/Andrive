@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent" >
 
-    <org.opencv.android.NativeCameraView
+    <org.opencv.android.JavaCameraView
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
         opencv:show_fps="true"
@@ -14,8 +14,10 @@
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:text="@string/info"
-        android:textColor="#FFF"
+        android:textColor="#00F"
         android:textSize="12sp"
-        android:id="@+id/info_text" />
+        android:id="@+id/info_text"
+        android:layout_marginTop="14sp"
+        android:layout_marginLeft="12sp" />
 
 </RelativeLayout>

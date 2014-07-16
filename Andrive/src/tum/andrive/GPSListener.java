@@ -9,11 +9,18 @@ import android.location.LocationListener;
 import android.location.LocationManager;
 import android.location.Location;
 
-
+/**
+ *  The GPSListener class mantains the location and speed updates during the
+ *  application runtime.
+ *
+ */
 public class GPSListener extends Activity implements LocationListener
 {
     private LocationManager locationManager;
     private Activity activity;
+    private long time;
+    private float speed;
+    private float accurary;
 
     GPSListener(Activity act) {
         locationManager = (LocationManager) act.getApplicationContext().getSystemService(Context.LOCATION_SERVICE);
@@ -23,7 +30,11 @@ public class GPSListener extends Activity implements LocationListener
 
     @Override
     public void onLocationChanged(Location location) {
-        float speed = location.getSpeed() / 3.6f;
+        time = location.getTime();
+        if (location.hasAccuracy() && location.hasSpeed()) {
+            speed = location.getSpeed() / 3.6f;
+            accurary = location.getAccuracy();
+        }
         String info = "Speed: " + speed + "Km/h";
         ((TextView)activity.findViewById(R.id.info_text)).setText(info);
     }

@@ -84,7 +84,7 @@ public class Andrive extends Activity implements CvCameraViewListener2 {
     private static final int NATIVE_DETECTOR = 1;
     
     private MenuItem mItemType;
-    private int mDetectorType = NATIVE_DETECTOR;
+    private int mDetectorType = JAVA_DETECTOR;
     private String[] mDetectorName;
     
     /** Size of the frame window used to false positive filtering **/
