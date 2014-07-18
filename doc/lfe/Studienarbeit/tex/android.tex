@@ -70,6 +70,9 @@ language for the specific architecture. The class \textit{DetectionBasedTracker}
 can call these methods and also their equivalent in the Java programming
 language.
 
+The source code of this application can be found in the repository from
+\cite{andrive} at GitHub.
+
 % section androidapp (end)
 
 \section{Training the classifier} % (fold)
@@ -99,7 +102,38 @@ other hand, the bigger the images, more time the classifier needs to analyse the
 entire image.
 
 To train the Adaboost algorithm, it is required to choose 3 parameters, the hit
-rate, the maximum false alarm rate and the number of stages. 
+rate, the maximum false alarm rate and the number of stages. The hit rate is
+simply the desired rate of correctly classified examples. In other words, the
+hit rate is simply the number of correctly classified examples divided by the
+total number of examples. Ideally this rate should be close to 1.0.
+
+The false alarm rate is the number of false positive examples obtained by a
+particular weak classifier over the whole dataset. While training, weak
+classifiers that have a false alarm rate higher than the maximum specified are
+discarded. In practice this threshold should be between 0.45 and 0.5. Remember
+that weak classifiers are required just to perform better than random but in
+general they can not archive lower false alarm rates by their selves. For this
+reason if you specify a very low threshold on the false alarm rate, you get into
+the risk of not finding a weak classifier for the actual stage. Finally, the
+number of stages refers to the number of weak classifier in the final strong
+classifier.
+
+In the figure~\ref{fig:classification-error} is presented the evolution of the
+error as new weak classifiers are added to the strong classifier. The error is
+measured in the training data and a separate set of data called Testing set,
+this final set is composed of examples that are hided from the classifier to
+measure its performance on unknown data. As you can see, The more weak
+classifiers, the smaller the error on the training set. Nevertheless, notice how
+after 16 weak classifiers the performance on the testing set gets worst. This is a
+sign that the model is over-fitting the data and it is not generalizing anymore.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=\linewidth]{img/classification_error.eps}
+\caption{Classification error while training the classifier with respect to the
+number of weak classifiers}
+\label{fig:classification-error}
+\end{figure} 
 
 % section trainingClasssifier (end)
 
