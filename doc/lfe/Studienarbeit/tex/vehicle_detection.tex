@@ -8,15 +8,15 @@ computer vision, cameras are commonly used as the sensors and the images they
 produce are the measurements.
 
 In this project one of our interest is precisely to detect objects in images 
-obtained form a cellphone camera. Specifically we want to detect vehicles and 
+obtained form a cellphone camera. Specifically the goal is to detect vehicles and 
 be able to get the distance between them and the camera. In this
-chapter we are going to present the theory and the method that was considered to
-tackle this problem.
+chapter the theory and the method that was considered to
+tackle this problem is presented.
 
 \section{Object detection and image classification} % (fold)
 \label{sec:objectdetec}
 
-In this section we are going to get through the theoretical framework involved
+In this section is going to be explained the theoretical framework involved
 in the process of detecting objects in camera images. As the reader may know,
 there does not exist a definite solution to this problem due to its inherent
 complexity. Through the years many interesting strategies have being proposed to
@@ -32,8 +32,8 @@ used to \textit{classify} a texture.
 
 For this project, our goal is to find the set of features that describe the
 texture produced by a vehicle and classify those regions in the image with these
-features as the detected vehicles. We start by defining the type of features
-that are going to be extracted from the images, then we will describe the
+features as the detected vehicles. The first step is to define the type of features
+that are going to be extracted from the images, then describe the
 machine learning algorithm used to extract the particular subset of feature that
 describe a vehicle and finally some words about the data used in the learning
 process.
@@ -141,10 +141,10 @@ feature vector of the image. This feature vector is also known as
 \subsection{Feature learning} % (fold)
 \label{sub:feature-learning}
 
-In the previous section we explained the type of features that are extracted
+In the previous section was explained the type of features that are extracted
 from the images. The next step is to learn which group of them better describe
-the object we are interested in. In order to do this, we used a Machine Learning
-algorithm. In particular, in the work of \cite{viola-jones} they used the
+the object of interest. In order to do this, a Machine Learning
+algorithm is used. In particular, in the work of \cite{viola-jones} they used the
 \textit{Adaboost} algorithm. 
 
 Short for ``Adaptive Boosting'', this algorithm was first proposed by
@@ -237,22 +237,22 @@ classifier. The weighting is given by their performance on the dataset.
 \label{sub:data-set}
 
 The final step and maybe the most critical one is the dataset construction. In
-Supervise Machine Learning everything is about data. The more data we handle,
-the more we can learn and the more we can generalize to all possible scenarios.
+Supervise Machine Learning everything is about data. The more data is used,
+the more the algorithm can learn and the more it can generalize to all possible scenarios.
 Unfortunately, gathering data is usually very expensive process. It is expensive
 in terms of quality and quantity.
 
 Moreover, depending on the complexity of the application a minimum amount of data 
 is required in oder to obtain meaningful results. The higher the complexity of the 
-application, the more data is required. In the problem of vehicle detection, we
-deal with a high complexity. First of all because the huge variability on
+application, the more data is required. The problem of vehicle detection,
+involves a high complexity. First of all because the huge variability on
 vehicle's shape and color and secondly because of all the factors that can
 influence the image formation, like for example weather conditions.
 
-For this work we labeled a set of about 430 pictures of rear view cars. The
+For this work a set of about 430 pictures of rear view cars was labeled. The
 pictures where extracted from the dataset used by \cite{tme} and the Caltech
 Computer Vision Dataset of rear cars created by Markus Weber (1999). For the
-negative examples, we used the Caltech background dataset, also collected by
+negative examples, the Caltech background dataset was used, also collected by
 Markus Weber. Some of the images used as the training dataset are shown in 
 the figure~\ref{fig:dataset}.
 
@@ -288,8 +288,8 @@ false positives occur when the classifier wrongly label negative examples as
 positive and false negatives is the other way around.
 
 Sometimes it is possible to use some strategies to improve a classification by
-removing some of this false classifications. In this particular project, we have
-the advantage to work with a continuous flow of images coming from a camera.
+removing some of this false classifications. In this particular project, we
+suppose a continuous flow of images coming from a camera.
 This fact offers an extra dimension which allow us to make assumptions in
 order to filter some of the false classifications.
 
@@ -300,8 +300,8 @@ appear in the next one, in almost the same region inside the image.
 
 With this in mind, it is easy to design a simple strategy to eliminate some
 false positives. Supposing a vehicle can not simply disappear from one
-frame to the other, we can construct a classification window over time, where we
-keep track of the position of all the previous classified vehicles. If a new
+frame to the other, a classification window can be constructed over time, where
+the position of all the previous classified vehicles is tracked. If a new
 classification is not consistent with the previous ones in the window, then it
 is simply dropped. 
 
@@ -337,9 +337,9 @@ example of a picture of a small toy car. If the model is realistic
 enough, a human can not differentiate it from a real one, then having an
 incorrect estimate of its size.
 
-We face this problem in this section and it is required to make some
-assumptions to be able to approximate a solution. First it is assumed that the
-pictures we are going to be working with are from real vehicles, this is really
+This problem is discussed in this section and it is required to make some
+assumptions to be able to produce a solution. First it is assumed that the
+pictures are from real vehicles, this is really
 important because our goal is to obtain references of real world distances. The
 problem is that generally vehicles have different sizes and shapes. Nevertheless
 is not a bad idea to assume an average width for all the vehicles. 
@@ -404,7 +404,7 @@ coefficients are need to be calculated.
 
 In order to do this relation invariant to the image resolution, we normalize the
 size in pixels of the region containing the vehicle with the total width of the
-image. With this results we can find  an approximated distance to the
+image. With this results we find  an approximated distance to the
 vehicle, giving an initial solution to the problem of distance estimation.
 
 % section Distance estimation (end)
@@ -414,9 +414,9 @@ vehicle, giving an initial solution to the problem of distance estimation.
 
 Once the classification is done, the estimation of the distance should be
 associated to its respective vehicle. For this reason, it is necessary to track
-the vehicles appearing in the image. To do this, we observe that each vehicle has 
+the vehicles appearing in the image. Is obvious that each vehicle has 
 a certain motion and position from frame to frame. Ideally, given the
-assumptions we made about the fixed camera view, the motion and position of each
+assumptions about the fixed camera view, the motion and position of each
 vehicle should be similar between frames.
 
 Traditionally, the \textit{optical flow} is known as the apparent motion of
@@ -434,7 +434,7 @@ tested this approach by switching between a \textit{detection phase} and a
 \textit{tracking phase} periodically. This has proven to be more fast than
 performing a detection on each frame.
 
-Now we can assign an identification number to each vehicle by
+Now an identification number can be assigned to each vehicle by
 thresholding the similarity between the classification regions. Basically, if a 
 rectangle appearing in two consequent frames have similar position and size, these
 two are consider to correspond to the same vehicle and an identification number
@@ -493,8 +493,8 @@ the transit time of the signal and the speed of light. There are other ways to
 calculate position of the device, for example the same idea can also be applied 
 to the signal of antennas or even wireless networks access points.
 
-It is trivial to calculate the speed once we have at least two measured
-positions on time. The strength of this approach lies on the amount of
-measurements we can obtain in time and their accuracy.
+It is trivial to calculate the speed once at least two measured
+positions on time are obtained. The strength of this approach lies on the amount of
+measurements obtained in time and their accuracy.
 
 % section speed-estimation (end)

@@ -50,7 +50,7 @@ A typical lane tracking process includes:
     \item Lane Tracking.
 \end{itemize}
 
-\begin{figure}
+\begin{figure}[H]
 \begin{center}
     \includegraphics[scale=0.6]{img/lane1.png}
 \end{center}
@@ -102,7 +102,7 @@ frame.  It reduces quality which is a tradeoff but it doesn't affect significant
 ultimate output. We are reducing the size of each input frame by 1/4 and then upsampling it again by
 factor of 4 before displaying it back on screen. This concept is also referred as Scale Space.
 
-\begin{figure}
+\begin{figure}[H]
 \begin{center}
     \includegraphics[scale=0.6]{img/lane2.png}
 \end{center}
@@ -119,7 +119,7 @@ containing the lane markings. It creates a binary mask and only detect in
 windows that lie in the smallest bounding box of our blobs of possible
 candidates.
 
-\begin{figure}
+\begin{figure}[H]
 \begin{center}
     \includegraphics[scale=0.6]{img/lane3.png}
 \end{center}
@@ -133,7 +133,7 @@ Canny edge detection is one of the edge detection methods that is used to find a
 
 In this step, we use Canny edge detection to find lane boundaries in the frame. Canny edge detection basically uses gradient vector of an intensity image. Lane boundaries have high contrast in the image, and this feature yields high values of gradient vector by which we can find the edge direction, which is orthogonal to gradient vector. It is one of the best and efficient methods among many edge detection methods \cite{lane3}.
 
-\begin{figure}
+\begin{figure}[H]
 \begin{center}
     \includegraphics[scale=0.6]{img/lane4.png}
 \end{center}
@@ -147,7 +147,7 @@ The Hough transform is a technique which can be used to isolate features of a pa
 
 Let's take an image (figure~\ref{fig:lane5}) with two lines A and B. Obviously both lines are each made of its own set of pixels laying on a straight line. Now, one way or another we need to learn our software which pixels are on a straight line and, if so, to what line they belong to.
 
-\begin{figure}
+\begin{figure}[H]
 \begin{center}
     \includegraphics[scale=0.6]{img/lane5.png}
 \end{center}
@@ -155,7 +155,7 @@ Let's take an image (figure~\ref{fig:lane5}) with two lines A and B. Obviously b
 \label{fig:lane5}
 \end{figure}
 
-\begin{figure}
+\begin{figure}[H]
 \begin{center}
     \includegraphics[scale=0.6]{img/lane6.png}
 \end{center}
@@ -186,7 +186,7 @@ The Hough Lines object finds Cartesian coordinates of lines that are described b
     \cos(\theta)}{\sin(\theta)}
 \end{equation}
 
-\begin{figure}
+\begin{figure}[H]
 \begin{center}
     \includegraphics[scale=0.6]{img/lane7.png}
 \end{center}
@@ -197,7 +197,7 @@ The Hough Lines object finds Cartesian coordinates of lines that are described b
 The problem with this current progress is that we can not find the endpoints of the lane that is also known as vanishing point of lane. For this, Probabilistic Hough Transform \cite{lane4} is used which is pretty much the same as regular Hough Transform but finds the end of each line as shown in the diagram below.
 
 
-\begin{figure}
+\begin{figure}[H]
 \begin{center}
     \includegraphics[scale=0.6]{img/lane8.png}
 \end{center}
@@ -207,7 +207,7 @@ The problem with this current progress is that we can not find the endpoints of 
 
 The regular transform does not find endpoints and the probabilistic tends to find several other lines that is not required. To solve this problem, a bitwise addition of two images is done. The final output looks like the image below.
 
-\begin{figure}
+\begin{figure}[H]
 \begin{center}
     \includegraphics[scale=0.6]{img/lane9.png}
 \end{center}
@@ -222,7 +222,7 @@ Our project aims is to develop an android app which will help researchers in inv
 SDLP stands for standard deviation of lateral position and is considered the primary outcome measure of vehicle control. The secondary outcome measure is the standard deviation of speed (SDS). Since SDLP increment may ultimately result in lane crossings into the road shoulder and adjacent traffic lane, it can also be regarded as a potential index of driving safety. It is considered an international standard of evaluation in the on-the-road driving test around the globe. 
 
 
-\begin{figure}
+\begin{figure}[H]
 \begin{center}
     \includegraphics[scale=0.6]{img/lane10.png}
 \end{center}
@@ -269,7 +269,7 @@ square root of the average value of $(X - \mu)^2$.
 The following graph shows average values of SDLP calculated from a demo video. The mean value is around 0.80 which is a poor estimation and the reason is that boundary detection is sometimes very inaccurate. The noise data has a negative impact on the dataset. 
 
 
-\begin{figure}
+\begin{figure}[H]
 \begin{center}
     \includegraphics[scale=0.6]{img/lane11.png}
 \end{center}
@@ -282,7 +282,7 @@ For implementing this proof of concept, we are using Android SDK and Android NDK
 
 Project Structure :-
 
-\begin{figure}
+\begin{figure}[H]
     \centering\small
     \begin{minipage}[t]{\linewidth}
         \dirtree{%
@@ -313,7 +313,7 @@ The OpenCV (Open Source Computer Vision) Library was created to provide a common
 Both approaches uses the Java wrapper and there is a performance penalty on every OpenCV function called per frame. When using the Java API, for example application calls three OpenCV functions per video frame so this particular application will incur six total JNI call penalties per frame as per shown in Fig. A slightly more difficult but more performance optimized development method uses the Android NDK (Native Development Kit). In this approach, the OpenCV vision pipeline code is written entirely in C++, with direct calls to OpenCV. You simply encapsulate all of the OpenCV calls in a single C++ class, calling it once per frame as shown in Fig. With this method, only two JNI call penalties are incurred per frame, so the per-frame JNI performance penalty is significantly reduced. Java is still used for non-vision portions of the application, including the GUI. We are using the second approach to follow an optimized path. 
 
 
-\begin{figure}[t]
+\begin{figure}[H][t]
 \begin{subfigure}[b]{0.5\textwidth}
 \centering
 \includegraphics[width=0.85\linewidth]{img/lane12.png}
@@ -332,7 +332,7 @@ Both approaches uses the Java wrapper and there is a performance penalty on ever
 
 Class diagrams represent the structure of classes used in the source code. LineFinder class represent the class which implements the major lane detection and over-laying functions. LaneCalculation class represent functions which are used to calculate lateral position and SDLP values.
 
-\begin{figure}
+\begin{figure}[H]
 \begin{center}
     \includegraphics[scale=0.6]{img/lane14.png}
 \end{center}
@@ -353,7 +353,7 @@ My contribution to the original open source code and optimization techniques whi
 
 I have tested the app on Samsung S5 which is a high-end android phone with quad-core processor. The test case used is the youtube video [6] which is also mentioned previously in the document. Values of Hough Vote were changed using the slider and then once run, frame per second (fps) value is displayed on top left corner of screen. I have used only landscape mode because portrait mode limits the view and we need a good horizontal view of the road. The bar chart shown below shows that fps readings improved significantly after optimization although they are still not very good. The Hough Transform algorithms are very resource intensive. 
 
-\begin{figure}
+\begin{figure}[H]
 \begin{center}
     \includegraphics[scale=0.6]{img/lane15.png}
 \end{center}
