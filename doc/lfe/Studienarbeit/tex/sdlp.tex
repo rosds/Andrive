@@ -1,44 +1,54 @@
 \chapter{Lane Detection, Tracking and SDLP Calculation}  \label{kap:sdlp}
 
-Everybody in this world is concerned about safety. The people those who go out from
-one place to other, expect to reach safely. Without any sudden incidents which may come 
-through externally by road accidents while travelling. We can avoid the road accidents by 
-using improved driving assistances. Therefore, a system that provides a means of warning 
-the driver to the danger has the potential to save a considerable number of lives. One of the 
-main technologies involved in these tasks is computer vision, which become a powerful tool for 
-sensing the environment and detect road boundaries. Lane detection and object detection plays 
-vital role for accidents. For human vision and human intelligence the task of lane detection and 
-object detection changes due to variations in the road conditions. Sometimes it is very easy to 
-detect with the human eyes but in some conditions due to externals effects the human intelligent 
+
+Everybody in this world is concerned about safety. The people those who go out
+from one place to other, expect to reach safely. Without any sudden incidents
+which may come through externally by road accidents while traveling. The road
+accidents can be avoided by using improved driving assistances. Therefore, a
+system that provides a means of warning the driver to the danger has the
+potential to save a considerable number of lives. One of the main technologies
+involved in these tasks is computer vision, which become a powerful tool for
+sensing the environment and detect road boundaries. Lane detection and object
+detection plays vital role for accidents. For human vision and human
+intelligence the task of lane detection and object detection changes due to
+variations in the road conditions. Sometimes it is very easy to detect with the
+human eyes but in some conditions due to externals effects the human intelligent
 have detection problems. 
 
-Driver inattention has been a major focus of driver safety research (Klauer et al., 2006; 
-Ranney et al., 2000; Wang et al.,1996). In recent years however, naturalistic studies have made 
-it possible to gain additional insights on driver behavior and have actually demonstrated that 
-78\% of crashes and 65\% of near crashes are driver inattention related (Klauer et al., 2006). The 
-main causes of collisions can be driver error, drowsiness, impaired driving due to alcohol/drugs 
-or distractions due to a phone call or tuning the radio. Many studies have shown that driver 
-inattention can influence lane-keeping ability. One of the main source of making this analysis on 
-vehicle control is the standard deviation of lateral position (SDLP), ie, the
-amount of ``weaving''
-of the car.
 
-The basic purpose of developing this android app as a proof of concept is to help
-researchers in domain of ergonomics to investigate driver's behavior in different scenarios. We 
-are proposing a system which acquires the front view using an android phone camera mounted 
-on the vehicle then applying few processes in order to detect the lanes. We are using an open 
-source code for lane detection \cite{lane-code} to provide the baseline functionality which is developed to run 
-on PC. Code is ported to Android NDK project and then improved further and features added as 
-per our requirement.
+Driver inattention has been a major focus of driver safety research. In recent years however,
+naturalistic studies have made it possible to gain additional insights on driver
+behavior and have actually demonstrated that 78\% of crashes and 65\% of near
+crashes are driver inattention related. The main causes of
+collisions can be driver error, drowsiness, impaired driving due to
+alcohol/drugs or distractions due to a phone call or tuning the radio. Many
+studies have shown that driver inattention can influence lane-keeping ability.
+One of the main source of making this analysis on vehicle control is the
+standard deviation of lateral position (SDLP), ie, the amount of ``weaving'' of
+the vehicle as shown in the work of \cite{lane6}.
+
+
+The basic purpose of developing this android app as a proof of concept is to
+help researchers in domain of ergonomics to investigate driver's behavior in
+different scenarios. We are proposing a system which acquires the front view
+using an android phone camera mounted on the vehicle then applying few processes
+in order to detect the lanes. Open source code for lane detection
+\cite{lane-code} is used to provide the baseline functionality which is developed 
+to run on PC\@. Code is ported to Android NDK project and then improved 
+further and features added as per our requirement.
+
 
 \section{Lane Detection and Tracking}
 
-Lane departure warning system is a mechanism designed to warn a driver when the 
+
+Lane departure warning system is a mechanism designed to warn a driver when the
 vehicle begins to move out of his lane (unless a turn signal is on in that
-direction) on freeways and arterial roads. Lane detection algorithms detect lane markings and the edges
-of the road, and estimate the vehicle position in the lane. A lane detection system must be
-able to pick out all manner of markings from cluttered roadways and filter them to produce a
-reliable estimate of the vehicle position and trajectory relative to the lane.
+direction) on freeways and arterial roads. Lane detection algorithms detect lane
+markings and the edges of the road, and estimate the vehicle position in the
+lane. A lane detection system must be able to pick out all manner of markings
+from cluttered roadways and filter them to produce a reliable estimate of the
+vehicle position and trajectory relative to the lane. 
+
 
 A typical lane tracking process includes:
 
@@ -58,8 +68,11 @@ A typical lane tracking process includes:
 \label{fig:lane1}
 \end{figure}
 
-We are using some assumptions for our solution as it is a prototype and also we
-something which is manageable but still suffice the need of a good proof of concept. 
+
+There are certain assumptions kept in consideration for our solution as it is a
+prototype and also we intend to build something which is manageable but still
+suffice the need of a good proof of concept. 
+
 
 \begin{itemize}
 \item Road is assumed to be of fixed lane width and constant texture so that
