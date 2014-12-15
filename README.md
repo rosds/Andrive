@@ -18,14 +18,13 @@ This application is mainly implemented using the
 Installation
 ------------
 
-Before installing the application, please make sure to have previously
-installed the following components:
+Before installing the application, make sure to have following components:
 
 - [Android SDK](https://developer.android.com/sdk/index.html)
 - [Android NDK](https://developer.android.com/tools/sdk/ndk/index.html)
 - [OpenCV for Android](http://opencv.org/downloads.html)
 
-Once installed it is required to set two variables, **OPENCV_SDK_ROOT** and
+To start, it is required to set the variables **OPENCV_SDK_ROOT** and
 **OPENCVSDK**. The first variable is used as a project property. Proceed to
 create a file called *local.properties* in the project directory and set the 
 variable with the path to your installation of the OpenCV SDK directiry. For 
@@ -36,21 +35,20 @@ OPENCV_SDK_ROOT=../../OpenCV-2.4.10-android-sdk/sdk
 ```
 
 The second variable is a environment variable and in case of using Linux can be
-set for example as follows:
+set trough a console as follows:
 
 ```bash
 $ export OPENCVSDK=/path/to/OpenCV-2.4.10-android-sdk/sdk
 ```
 
-After setting the two variable, the next step would be to build the
-native code using the *ndk-build* executable included in the NDK installation.
+After setting the two variable, the next step to build the
+native code using the *ndk-build* executable in the NDK installation.
 
 ```bash
-$ /path/to/ndk-buld
+$ /path/to/ndk-build
 ```
 
-After the native code is build, the application can be finally build using the
-*ant* command in the main directory as:
+Then build the application using the *ant* command in the project directory
 
 ```bash
 $ ant debug
@@ -63,4 +61,5 @@ application on your device with the *adb* command:
 $ adb install -r ./bin/Andrive-debug.apk
 ```
 
-done :D
+**NOTE**: Any application using the OpenCV library requires you to install also
+on the device the [Android OpenCV Manager](http://docs.opencv.org/platforms/android/service/doc/index.html).
